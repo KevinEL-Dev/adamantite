@@ -1,7 +1,6 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::Parser;
-use num::pow;
-use sysinfo::System;
+use sysinfo::{Networks, System};
 
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
@@ -49,6 +48,23 @@ fn main() {
             // to get decimal on prints
             let mem_in_gigabytes = (mem_in_bytes as f64) / (divisor as f64);
             println!("mem usage {} gb", mem_in_gigabytes);
+        }
+    } else if args.system_resource == "net" {
+        let mut networks = Networks::new_with_refreshed_list();
+        println!("=> networks:");
+        while diff < time_delta {
+            networks.refresh(true);
+            end_time = Utc::now().time();
+            diff = end_time - start_time;
+            for (interface_name, data) in &networks {
+                println!(
+                    "{interface_name}: {} B (down) / {} B (up)",
+                    data.total_received(),
+                    data.total_transmitted(),
+                );
+                // If you want the amount of data received/transmitted since last call
+                // to `Networks::refresh`, use `received`/`transmitted`.
+            }
         }
     }
 }
