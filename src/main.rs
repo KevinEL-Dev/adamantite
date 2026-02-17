@@ -89,7 +89,7 @@ fn find_pid_of_hytale() {
         .expect("failed to wait on grep");
 
     println!(
-        "output from grep {}",
+        "output from grep\n {}",
         String::from_utf8_lossy(&output.stdout)
     );
 }
