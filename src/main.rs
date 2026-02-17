@@ -66,7 +66,6 @@ fn main() {
         }
     }
 
-    println!("testing running a child process");
     find_pid_of_hytale();
 }
 fn find_pid_of_hytale() {
