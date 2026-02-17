@@ -78,7 +78,7 @@ fn find_pid_of_hytale() {
     let ps_out = ps_child.stdout.expect("failed to start echo process");
 
     let mut grep_child = Command::new("/bin/grep")
-        .arg("java --XX::AOT Cache=HytaleServer.aot")
+        .arg("'java -XX:AOTCache=HytaleServer.aot'")
         .stdin(Stdio::from(ps_out))
         .stdout(Stdio::piped())
         .spawn()
