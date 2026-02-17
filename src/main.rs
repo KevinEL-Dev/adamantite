@@ -1,7 +1,7 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::Parser;
+use std::process::{Command, Stdio};
 use sysinfo::{Networks, System};
-
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 struct Cli {
@@ -62,9 +62,34 @@ fn main() {
                     data.total_received(),
                     data.total_transmitted(),
                 );
-                // If you want the amount of data received/transmitted since last call
-                // to `Networks::refresh`, use `received`/`transmitted`.
             }
         }
     }
+
+    println!("testing running a child process");
+    find_pid_of_hytale();
+}
+fn find_pid_of_hytale() {
+    let ps_child = Command::new("/bin/ps")
+        .arg("aux")
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start ps");
+    let ps_out = ps_child.stdout.expect("failed to start echo process");
+
+    let mut grep_child = Command::new("/bin/grep")
+        .arg("java --X::AOT Cache=HytaleServer.aot")
+        .stdin(Stdio::from(ps_out))
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed te start grep process");
+
+    let output = grep_child
+        .wait_with_output()
+        .expect("failed to wait on grep");
+
+    println!(
+        "output from grep {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
 }
