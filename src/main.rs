@@ -68,6 +68,8 @@ fn main() {
 
     let hytale_pid = find_pid_of_hytale();
     println!("hello hytale pid is {}", hytale_pid);
+
+    get_hytale_total_cpu_usage(hytale_pid);
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
@@ -77,7 +79,7 @@ fn find_pid_of_hytale() -> u32 {
         .expect("failed to start ps");
     let ps_out = ps_child.stdout.expect("failed to start echo process");
 
-    let mut grep_child = Command::new("/bin/grep")
+    let grep_child = Command::new("/bin/grep")
         .arg("java -XX:AOTCache=HytaleServer.aot")
         .stdin(Stdio::from(ps_out))
         .stdout(Stdio::piped())
@@ -86,7 +88,7 @@ fn find_pid_of_hytale() -> u32 {
 
     let grep_output = grep_child.stdout.expect("failed to get grep output");
 
-    let mut head_child = Command::new("/bin/head")
+    let head_child = Command::new("/bin/head")
         .arg("-n")
         .arg("1")
         .stdin(Stdio::from(grep_output))
@@ -108,11 +110,11 @@ fn find_pid_of_hytale() -> u32 {
         .stdin(Stdio::from(head_output))
         .stdout(Stdio::piped())
         .spawn()
-        .expect("failed to start head process");
+        .expect("failed to start awk process");
 
     let output = awk_child
         .wait_with_output()
-        .expect("failed to wait for head");
+        .expect("failed to wait for awk");
     /*println!(
         "output from awk\n {}",
         String::from_utf8_lossy(&output.stdout)
@@ -120,4 +122,35 @@ fn find_pid_of_hytale() -> u32 {
     let s = String::from_utf8_lossy(&output.stdout).to_string();
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
     return pid_from_s;
+}
+fn get_hytale_total_cpu_usage(hytale_pid: u32) {
+    let top_child = Command::new("/bin/top")
+        .arg("-b")
+        .arg("-d")
+        .arg("1")
+        .arg("-n")
+        .arg("2")
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start ps");
+    let top_output = top_child.stdout.expect("failed to start top process");
+    let result_arg = format!(
+        "$1 == \"{}\" {{block_num++; next}} block_num == 2 {{sum += $9;}} END {{print sum}}",
+        hytale_pid,
+    );
+    println!("resulting string is \n{}", result_arg);
+
+    let awk_child = Command::new("/bin/awk")
+        .arg(result_arg)
+        .stdin(Stdio::from(top_output))
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start awk process");
+    let output = awk_child
+        .wait_with_output()
+        .expect("failed to wait for awk");
+    println!(
+        "output from awk\n {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
 }
