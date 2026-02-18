@@ -68,7 +68,7 @@ fn main() {
 
     find_pid_of_hytale();
 }
-fn find_pid_of_hytale() {
+fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
         .arg("aux")
         .stdout(Stdio::piped())
@@ -112,8 +112,11 @@ fn find_pid_of_hytale() {
     let output = awk_child
         .wait_with_output()
         .expect("failed to wait for head");
-    println!(
+    /*println!(
         "output from awk\n {}",
         String::from_utf8_lossy(&output.stdout)
-    );
+    );*/
+    let s = String::from_utf8_lossy(&output.stdout).to_string();
+    let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
+    return pid_from_s;
 }
