@@ -150,7 +150,7 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) {
         .wait_with_output()
         .expect("failed to wait for awk");
     println!(
-        "output from awk\n {}",
-        String::from_utf8_lossy(&output.stdout)
+        "output from awk\n{}%",
+        String::from_utf8_lossy(&output.stdout).trim()
     );
 }
