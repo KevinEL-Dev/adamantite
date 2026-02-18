@@ -66,7 +66,8 @@ fn main() {
         }
     }
 
-    find_pid_of_hytale();
+    let hytale_pid = find_pid_of_hytale();
+    println!("hello hytale pid is {}", hytale_pid);
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
