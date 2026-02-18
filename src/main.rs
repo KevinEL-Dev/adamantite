@@ -92,11 +92,28 @@ fn find_pid_of_hytale() {
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to start the head process");
-    let output = head_child
+    let head_output = head_child.stdout.expect("failed to get head output");
+
+    /*let output = head_child
         .wait_with_output()
         .expect("failed to wait for head");
     println!(
         "output from head\n {}",
+        String::from_utf8_lossy(&output.stdout)
+    );*/
+
+    let awk_child = Command::new("/bin/awk")
+        .arg("{print $2}")
+        .stdin(Stdio::from(head_output))
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start head process");
+
+    let output = awk_child
+        .wait_with_output()
+        .expect("failed to wait for head");
+    println!(
+        "output from awk\n {}",
         String::from_utf8_lossy(&output.stdout)
     );
 }
