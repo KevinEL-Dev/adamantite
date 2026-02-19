@@ -124,20 +124,21 @@ fn find_pid_of_hytale() -> u32 {
     return pid_from_s;
 }
 fn get_hytale_total_cpu_usage(hytale_pid: u32) {
+    let result_arg_top = format!("{}", hytale_pid);
     let top_child = Command::new("/bin/top")
         .arg("-b")
-        .arg("-d")
-        .arg("1")
         .arg("-n")
-        .arg("2")
+        .arg("1")
+        .arg("-p")
+        .arg(result_arg_top)
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to start ps");
     let top_output = top_child.stdout.expect("failed to start top process");
     let result_arg = format!(
-        "$1 == \"{}\" {{block_num++; next}} block_num == 2 {{sum += $9;}} END {{print sum}}",
-        hytale_pid,
+        "$1 == \"PID\" {{block_num++; next}} block_num == 2 {{sum += $9;}} END {{print sum}}"
     );
+
     println!("resulting string is \n{}", result_arg);
 
     let awk_child = Command::new("/bin/awk")
