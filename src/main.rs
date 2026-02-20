@@ -24,6 +24,8 @@ fn main() {
     let mut sys = System::new();
     let mut diff = end_time - start_time;
     let time_delta = TimeDelta::seconds(args.time_seconds);
+    sys.refresh_all();
+    let num_of_cpus = sys.cpus().len();
 
     if args.system_resource == "cpu" {
         while diff < time_delta {
@@ -66,10 +68,15 @@ fn main() {
         }
     }
 
+    let num_of_cpus = num_of_cpus as f32;
     let hytale_pid = find_pid_of_hytale();
     println!("hello hytale pid is {}", hytale_pid);
 
-    get_hytale_total_cpu_usage(hytale_pid);
+    let mut hytale_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
+    println!(
+        "hytale is using {} cpus",
+        hytale_cpu_usage / (num_of_cpus * 100.0),
+    )
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
@@ -123,7 +130,7 @@ fn find_pid_of_hytale() -> u32 {
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
     return pid_from_s;
 }
-fn get_hytale_total_cpu_usage(hytale_pid: u32) {
+fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     let result_arg_top = format!("{}", hytale_pid);
     println!("hytale_pid is {}", hytale_pid);
     let top_child = Command::new("/bin/top")
@@ -155,4 +162,7 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) {
         "output from awk\ncpu usage is {}%",
         String::from_utf8_lossy(&output.stdout).trim()
     );
+    let s = String::from_utf8_lossy(&output.stdout).to_string();
+    let hytale_cpu_usage: f32 = s.trim().parse().expect("not a valid number");
+    return hytale_cpu_usage;
 }
