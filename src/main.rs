@@ -27,6 +27,7 @@ fn main() {
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
 
+    println!("number of cpus your system has is {}", num_of_cpus);
     if args.system_resource == "cpu" {
         while diff < time_delta {
             sys.refresh_cpu_usage();
