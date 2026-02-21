@@ -52,3 +52,11 @@ Currently adamantite will get the number of cpus your system has and determine h
 ### Formula for this
 (hytale_cpu_usage) / (100*number_of_cpus)
 
+## What is being worked and plans for future
+Say we track 5 seconds of cpu usage from Hytale and its processes.We need to follow Hytale's logs that it produces at that same time.
+
+There is two possible routes and probably more to do this but these are what came to my mind first.
+
+We can go the concurrency route where we instantiate two threads, one thread to get Hytales cpu usage and another thread to parse Hytale logs.
+
+If not concurrency, I looked into using journalctl. So once we get the cpu usage for those 5 seconds we just pass arguments to journalctl to show me Hytale's logs for the last 5 seconds and parse it from there
