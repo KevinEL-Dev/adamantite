@@ -26,18 +26,33 @@ fn main() {
     let time_delta = TimeDelta::seconds(args.time_seconds);
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
-
+    let hytale_pid = find_pid_of_hytale();
+    let num_of_cpus = num_of_cpus as f32;
     println!("number of cpus your system has is {}", num_of_cpus);
     if args.system_resource == "cpu" {
+        let mut hytale_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
+        let mut counter = 0;
+        let mut total_cpu_usage: f32 = 0.0;
         while diff < time_delta {
-            sys.refresh_cpu_usage();
+            /*sys.refresh_cpu_usage();*/
             end_time = Utc::now().time();
             diff = end_time - start_time;
-            for cpu in sys.cpus() {
+            /*for cpu in sys.cpus() {
                 println!("{}%", cpu.cpu_usage());
-            }
+            }*/
+
+            let curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
+
+            println!("hytale curr cpu usage is {}%", curr_cpu_usage);
+            total_cpu_usage += curr_cpu_usage;
+            counter += 1;
             std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
         }
+        println!(
+            "for {} seconds hytale on average used {} cpus",
+            args.time_seconds,
+            (total_cpu_usage) / counter as f32
+        );
     } else if args.system_resource == "mem" {
         while diff < time_delta {
             // only refresh ram
@@ -69,15 +84,15 @@ fn main() {
         }
     }
 
-    let num_of_cpus = num_of_cpus as f32;
+    /*let num_of_cpus = num_of_cpus as f32;
     let hytale_pid = find_pid_of_hytale();
-    println!("hello hytale pid is {}", hytale_pid);
+    println!("hello hytale pid is {}", hytale_pid);*/
 
-    let mut hytale_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
+    /*let mut hytale_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
     println!(
         "hytale is using {} cpus",
         hytale_cpu_usage / (num_of_cpus * 100.0),
-    )
+    )*/
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
@@ -133,7 +148,7 @@ fn find_pid_of_hytale() -> u32 {
 }
 fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     let result_arg_top = format!("{}", hytale_pid);
-    println!("hytale_pid is {}", hytale_pid);
+    /*println!("hytale_pid is {}", hytale_pid);*/
     let top_child = Command::new("/bin/top")
         .arg("-b")
         .arg("-n")
@@ -148,7 +163,7 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
         "$1 == \"PID\" {{block_num++; next}} block_num == 1 {{sum += $9;}} END {{print sum}}"
     );
 
-    println!("resulting string is \n{}", result_arg);
+    /*println!("resulting string is \n{}", result_arg);*/
 
     let awk_child = Command::new("/bin/awk")
         .arg(result_arg)
@@ -159,10 +174,10 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     let output = awk_child
         .wait_with_output()
         .expect("failed to wait for awk");
-    println!(
+    /*println!(
         "output from awk\ncpu usage is {}%",
         String::from_utf8_lossy(&output.stdout).trim()
-    );
+    );*/
     let s = String::from_utf8_lossy(&output.stdout).to_string();
     let hytale_cpu_usage: f32 = s.trim().parse().expect("not a valid number");
     return hytale_cpu_usage;
