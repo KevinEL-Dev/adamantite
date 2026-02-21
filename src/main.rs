@@ -45,7 +45,7 @@ fn main() {
                 (current_system_cpu_usage / total_available_cpu_percentage) * num_of_cpus
             );
             total_system_cpu_usage +=
-                (current_system_cpu_usage / total_system_cpu_usage) * num_of_cpus;
+                (current_system_cpu_usage / total_available_cpu_percentage) * num_of_cpus;
 
             let curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
 
@@ -62,7 +62,7 @@ fn main() {
         println!(
             "for {} seconds your system on avgerage used {} cpus)",
             args.time_seconds,
-            (total_cpu_usage / counter as f32)
+            (total_system_cpu_usage / counter as f32)
         );
     } else if args.system_resource == "mem" {
         while diff < time_delta {
