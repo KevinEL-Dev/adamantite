@@ -55,7 +55,7 @@ Currently adamantite will get the number of cpus your system has and determine h
 ## What is being worked and plans for future
 Say we track 5 seconds of cpu usage from Hytale and its processes.We need to follow Hytale's logs that it produces at that same time.
 
-There is two possible routes and probably more to do this but these are what came to my mind first.
+There are two possible routes and probably more to do this but these are what came to my mind first.
 
 We can go the concurrency route where we instantiate two threads, one thread to get Hytales cpu usage and another thread to parse Hytale logs.
 
