@@ -24,13 +24,13 @@ fn main() {
     let mut sys = System::new();
     let mut diff = end_time - start_time;
     let time_delta = TimeDelta::seconds(args.time_seconds);
+
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
-    println!("number of cpus your system has is {}", num_of_cpus);
+
     if args.system_resource == "cpu" {
-        let mut hytale_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
         let mut counter = 0;
         let mut total_cpu_usage: f32 = 0.0;
         while diff < time_delta {
@@ -51,7 +51,7 @@ fn main() {
         println!(
             "for {} seconds hytale on average used {} cpus",
             args.time_seconds,
-            (total_cpu_usage) / (100.0 * counter as f32)
+            (total_cpu_usage / counter as f32) / (100.0 * num_of_cpus)
         );
     } else if args.system_resource == "mem" {
         while diff < time_delta {
