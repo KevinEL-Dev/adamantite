@@ -15,10 +15,6 @@ struct Cli {
 fn main() {
     // parges user input
     let args = Cli::parse();
-    println!(
-        "pattern: {:?}, path: {:?}",
-        args.system_resource, args.time_seconds
-    );
     let start_time = Utc::now().time();
     let mut end_time = Utc::now().time();
     let mut sys = System::new();
