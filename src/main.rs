@@ -51,7 +51,7 @@ fn main() {
         println!(
             "for {} seconds hytale on average used {} cpus",
             args.time_seconds,
-            (total_cpu_usage) / counter as f32
+            (total_cpu_usage) / (100.0 * counter as f32)
         );
     } else if args.system_resource == "mem" {
         while diff < time_delta {
