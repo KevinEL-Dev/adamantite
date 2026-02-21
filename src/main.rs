@@ -29,13 +29,22 @@ fn main() {
     if args.system_resource == "cpu" {
         let mut counter = 0;
         let mut total_cpu_usage: f32 = 0.0;
+        let mut total_system_cpu_usage: f32 = 0.0;
+        let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
         while diff < time_delta {
-            /*sys.refresh_cpu_usage();*/
+            sys.refresh_cpu_usage();
+            let mut current_system_cpu_usage: f32 = 0.0;
             end_time = Utc::now().time();
             diff = end_time - start_time;
-            /*for cpu in sys.cpus() {
+            for cpu in sys.cpus() {
                 println!("{}%", cpu.cpu_usage());
-            }*/
+                current_system_cpu_usage += cpu.cpu_usage();
+            }
+            println!(
+                "avg number of cores being used {}",
+                (current_system_cpu_usage / total_available_cpu_percentage) * num_of_cpus
+            );
+            total_system_cpu_usage += (current_system_cpu_usage / total_system_cpu_usage) * num_of_cpus);
 
             let curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
 
@@ -49,6 +58,7 @@ fn main() {
             args.time_seconds,
             (total_cpu_usage / counter as f32) / (100.0 * num_of_cpus)
         );
+        println!("for {} seconds your system on avgerage used {} cpus)",args.time_seconds, (total_cpu_usage / counter));
     } else if args.system_resource == "mem" {
         while diff < time_delta {
             // only refresh ram
