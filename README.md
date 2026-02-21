@@ -44,7 +44,7 @@ Example command:
 $ cargo run -- -s mem -t 2
 ```
 Output would look like this 
-![Project Screenshot] (./assets/mem_t_2_output.png)
+[Project Screenshot] (./assets/mem_t_2_output.png)
 
 I cut out redundant info but it will print your mem usage for your system.
 As for the other output, it will find a parent Hytale process and pass that to /bin/top which will get how much cpu% usage its using.
