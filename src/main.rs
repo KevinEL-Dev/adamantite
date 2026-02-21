@@ -64,6 +64,10 @@ fn main() {
             args.time_seconds,
             (total_system_cpu_usage / counter as f32)
         );
+        println!(
+            "Your total cpu usage on your system is {}%",
+            (total_system_cpu_usage / num_of_cpus) * 100.0
+        );
     } else if args.system_resource == "mem" {
         while diff < time_delta {
             // only refresh ram
