@@ -37,7 +37,14 @@ If you pass in the system resource "cpu", it will print every logical core cpu% 
 If you pass in the system resource "mem", it will print your total memory usage on your system for x seconds.
 If you pass in the system resource "net", it will print current network traffic on your system for x seconds.
 
-These values currently have no correlation to Hytale and its logs as I'm currently working on this.
+As of now, running the command where x is seconds
+```
+cargo run -- -s cpu -t x 
+```
+Output example:
+![Project Screenshot](./assets/)
+This command above will return the avg amount of cpu cores being used by hytale. Not necessary useful information considering you need to understand how the rest of the system is doing.
+
 
 Example command:
 ```

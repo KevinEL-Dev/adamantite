@@ -89,7 +89,7 @@ fn find_pid_of_hytale() -> u32 {
     let ps_out = ps_child.stdout.expect("failed to start echo process");
 
     let grep_child = Command::new("/bin/grep")
-        .arg("java -XX:AOTCache=HytaleServer.aot")
+        .arg("java -jar HytaleServer.jar --assets ../Assets.zip --backup --backup-dir backups --backup-frequency 30")
         .stdin(Stdio::from(ps_out))
         .stdout(Stdio::piped())
         .spawn()
