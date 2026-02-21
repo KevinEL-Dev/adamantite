@@ -43,7 +43,7 @@ fn main() {
 
             let curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
 
-            println!("hytale curr cpu usage is {}%", curr_cpu_usage);
+            /*println!("hytale curr cpu usage is {}%", curr_cpu_usage);*/
             total_cpu_usage += curr_cpu_usage;
             counter += 1;
             std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
@@ -83,16 +83,6 @@ fn main() {
             }
         }
     }
-
-    /*let num_of_cpus = num_of_cpus as f32;
-    let hytale_pid = find_pid_of_hytale();
-    println!("hello hytale pid is {}", hytale_pid);*/
-
-    /*let mut hytale_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
-    println!(
-        "hytale is using {} cpus",
-        hytale_cpu_usage / (num_of_cpus * 100.0),
-    )*/
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
@@ -120,14 +110,6 @@ fn find_pid_of_hytale() -> u32 {
         .expect("failed to start the head process");
     let head_output = head_child.stdout.expect("failed to get head output");
 
-    /*let output = head_child
-        .wait_with_output()
-        .expect("failed to wait for head");
-    println!(
-        "output from head\n {}",
-        String::from_utf8_lossy(&output.stdout)
-    );*/
-
     let awk_child = Command::new("/bin/awk")
         .arg("{print $2}")
         .stdin(Stdio::from(head_output))
@@ -138,17 +120,12 @@ fn find_pid_of_hytale() -> u32 {
     let output = awk_child
         .wait_with_output()
         .expect("failed to wait for awk");
-    /*println!(
-        "output from awk\n {}",
-        String::from_utf8_lossy(&output.stdout)
-    );*/
     let s = String::from_utf8_lossy(&output.stdout).to_string();
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
     return pid_from_s;
 }
 fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     let result_arg_top = format!("{}", hytale_pid);
-    /*println!("hytale_pid is {}", hytale_pid);*/
     let top_child = Command::new("/bin/top")
         .arg("-b")
         .arg("-n")
@@ -162,8 +139,6 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     let result_arg = format!(
         "$1 == \"PID\" {{block_num++; next}} block_num == 1 {{sum += $9;}} END {{print sum}}"
     );
-
-    /*println!("resulting string is \n{}", result_arg);*/
 
     let awk_child = Command::new("/bin/awk")
         .arg(result_arg)
