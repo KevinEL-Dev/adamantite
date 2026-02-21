@@ -28,7 +28,7 @@ fn main() {
 
     if args.system_resource == "cpu" {
         let mut counter = 0;
-        let mut total_cpu_usage: f32 = 0.0;
+        let mut hytale_total_cpu_usage: f32 = 0.0;
         let mut total_system_cpu_usage: f32 = 0.0;
         let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
         while diff < time_delta {
@@ -47,17 +47,16 @@ fn main() {
             total_system_cpu_usage +=
                 (current_system_cpu_usage / total_available_cpu_percentage) * num_of_cpus;
 
-            let curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
+            let hytale_curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
 
-            /*println!("hytale curr cpu usage is {}%", curr_cpu_usage);*/
-            total_cpu_usage += curr_cpu_usage;
+            hytale_total_cpu_usage += hytale_curr_cpu_usage;
             counter += 1;
             std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
         }
         println!(
             "for {} seconds hytale on average used {} cpus",
             args.time_seconds,
-            (total_cpu_usage / counter as f32) / (100.0 * num_of_cpus)
+            (hytale_total_cpu_usage / counter as f32) / (100.0 * num_of_cpus)
         );
         println!(
             "for {} seconds your system on avgerage used {} cpus)",
