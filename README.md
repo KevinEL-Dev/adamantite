@@ -42,8 +42,8 @@ As of now, running the command where x is seconds
 cargo run -- -s cpu -t x 
 ```
 Output example:
-![Project Screenshot](./assets/)
-This command above will return the avg amount of cpu cores being used by hytale. Not necessary useful information considering you need to understand how the rest of the system is doing.
+![Project Screenshot](./assets/cpu_t_10_output.png)
+This command above will return the avg amount of cpu cores being used by hytale. Not necessary useful information considering you need to understand how the rest of the system is doing.In the above example that is how my Hytale server performs when one person joins.
 
 
 Example command:
