@@ -52,7 +52,8 @@ fn main() {
         println!(
             "for {} seconds hytale on average used {} cpus",
             args.time_seconds,
-            (hytale_total_cpu_usage / counter as f32) * (num_of_cpus)
+            ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
+                * num_of_cpus
         );
         println!(
             "for {} seconds your system on average used {} cpus",
