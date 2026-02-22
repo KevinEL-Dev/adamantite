@@ -96,7 +96,7 @@ fn main() {
         }
     }*/
     else {
-        println!("please input a valid system resource. either \"cpu\",\"mem\",or \"net\"");
+        println!("Please input a valid system resource. Only current valid resource is \"cpu\"");
     }
 }
 fn find_pid_of_hytale() -> u32 {
