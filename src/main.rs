@@ -50,18 +50,18 @@ fn main() {
             std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
         }
         println!(
-            "for {} seconds hytale on average used {} cpus",
+            "For {} seconds hytale on average used {} cpus",
             args.time_seconds,
             ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                 * num_of_cpus
         );
         println!(
-            "for {} seconds your system on average used {} cpus",
+            "For {} seconds your system on average used {} cpus",
             args.time_seconds,
             (total_system_cpu_usage / counter as f32) * (num_of_cpus)
         );
         println!(
-            "for {} seconds your system on average was at {}% load",
+            "For {} seconds your system on average was at {}% load",
             args.time_seconds,
             (total_system_cpu_usage / counter as f32) * 100.0
         );
