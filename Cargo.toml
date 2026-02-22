@@ -1,6 +1,7 @@
 [package]
 name = "adamantite"
 version = "0.1.0"
+authors = ["KevinEL-Dev <contact@zookfish.com>"]
 edition = "2024"
 
 [dependencies]

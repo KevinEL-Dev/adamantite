@@ -41,10 +41,6 @@ fn main() {
                 //println!("{}%", cpu.cpu_usage());
                 current_system_cpu_usage += cpu.cpu_usage();
             }
-            println!(
-                "avg number of cores being used {}",
-                (current_system_cpu_usage / total_available_cpu_percentage) * num_of_cpus
-            );
             total_system_cpu_usage += current_system_cpu_usage / total_available_cpu_percentage;
 
             let hytale_curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
