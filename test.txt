@@ -1,3 +1,0 @@
-hytale     57511  0.0  0.0   7340  3712 ?        Ss   Feb04   0:00 /bin/bash /opt/hytale/server/start.sh
-hytale     57520  0.9 15.5 11352336 2535448 ?    Sl   Feb04 196:46 java -XX:AOTCache=HytaleServer.aot -jar HytaleServer.jar --assets ../Assets.zip --backup --backup-dir backups --backup-frequency 30
-cuddlyb+  112974  0.0  0.0   6544  2304 pts/0    S+   23:03   0:00 grep --color=auto hytale

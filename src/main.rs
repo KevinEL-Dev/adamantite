@@ -31,7 +31,7 @@ fn main() {
         let mut hytale_total_cpu_usage: f32 = 0.0;
         let mut total_system_cpu_usage: f32 = 0.0;
         let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
-        get_cpu_usage_from_pid(hytale_pid);
+        /*get_cpu_usage_from_pid(hytale_pid);*/
         while diff < time_delta {
             sys.refresh_cpu_usage();
             let mut current_system_cpu_usage: f32 = 0.0;
@@ -68,7 +68,8 @@ fn main() {
             args.time_seconds,
             (total_system_cpu_usage / counter as f32) * 100.0
         );
-    } else if args.system_resource == "mem" {
+    }
+    /*else if args.system_resource == "mem" {
         while diff < time_delta {
             // only refresh ram
             sys.refresh_memory_specifics(sysinfo::MemoryRefreshKind::everything().with_ram());
@@ -97,7 +98,8 @@ fn main() {
                 );
             }
         }
-    } else {
+    }*/
+    else {
         println!("please input a valid system resource. either \"cpu\",\"mem\",or \"net\"");
     }
 }
