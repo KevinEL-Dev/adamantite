@@ -1,7 +1,7 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::Parser;
 use std::process::{Command, Stdio};
-use sysinfo::{Networks, System};
+use sysinfo::{Networks, Pid, System};
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 struct Cli {
@@ -31,13 +31,14 @@ fn main() {
         let mut hytale_total_cpu_usage: f32 = 0.0;
         let mut total_system_cpu_usage: f32 = 0.0;
         let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
+        get_cpu_usage_from_pid(hytale_pid);
         while diff < time_delta {
             sys.refresh_cpu_usage();
             let mut current_system_cpu_usage: f32 = 0.0;
             end_time = Utc::now().time();
             diff = end_time - start_time;
             for cpu in sys.cpus() {
-                println!("{}%", cpu.cpu_usage());
+                //println!("{}%", cpu.cpu_usage());
                 current_system_cpu_usage += cpu.cpu_usage();
             }
             println!(
@@ -55,7 +56,7 @@ fn main() {
         println!(
             "for {} seconds hytale on average used {} cpus",
             args.time_seconds,
-            (hytale_total_cpu_usage / counter as f32) / (100.0 * num_of_cpus)
+            (hytale_total_cpu_usage / counter as f32) * (num_of_cpus)
         );
         println!(
             "for {} seconds your system on average used {} cpus)",
@@ -96,6 +97,8 @@ fn main() {
                 );
             }
         }
+    } else {
+        println!("please input a valid system resource. either \"cpu\",\"mem\",or \"net\"");
     }
 }
 fn find_pid_of_hytale() -> u32 {
@@ -170,4 +173,10 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     let s = String::from_utf8_lossy(&output.stdout).to_string();
     let hytale_cpu_usage: f32 = s.trim().parse().expect("not a valid number");
     return hytale_cpu_usage;
+}
+fn get_cpu_usage_from_pid(pid: u32) {
+    let s = System::new_all();
+    if let Some(process) = s.process(Pid::from_u32(pid)) {
+        println!("{:?}", process.name());
+    }
 }
