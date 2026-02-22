@@ -63,7 +63,8 @@ fn main() {
             (total_system_cpu_usage / counter as f32) * (num_of_cpus)
         );
         println!(
-            "Your total cpu usage on your system is {}%",
+            "for {} seconds your system on average was at {}% load",
+            args.time_seconds,
             (total_system_cpu_usage / counter as f32) * 100.0
         );
     } else if args.system_resource == "mem" {
