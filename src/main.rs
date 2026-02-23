@@ -202,9 +202,6 @@ fn get_cpu_usage_from_pid(pid: u32) {
                         task.name(),
                         task.cpu_usage()
                     );
-                    if let Some(thread_kind) = task.thread_kind() {
-                        println!("Process {:?} is a {thread_kind:?} thread", task.pid());
-                    }
                 }
             }
         }
