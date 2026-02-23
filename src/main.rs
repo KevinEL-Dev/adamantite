@@ -194,7 +194,6 @@ fn get_cpu_usage_from_pid(pid: u32) {
         if let Some(tasks) = process.tasks() {
             println!("Listing tasks for process {:?}", process.pid());
             for task_pid in tasks {
-                std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 if let Some(task) = s.process(*task_pid) {
                     println!(
                         "Task {:?}: {:?}, cpu usage {}%",
@@ -202,6 +201,9 @@ fn get_cpu_usage_from_pid(pid: u32) {
                         task.name(),
                         task.cpu_usage()
                     );
+                    if let Some(thread_kind) = task.thread_kind() {
+                        println!("Process {:?} is a {thread_kind:?} thread", process.pid());
+                    }
                 }
             }
         }
