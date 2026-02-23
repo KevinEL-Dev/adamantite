@@ -186,5 +186,14 @@ fn get_cpu_usage_from_pid(pid: u32) {
             pid,
             process.cpu_usage()
         );
+
+        if let Some(tasks) = process.tasks() {
+            println!("Listing tasks for process {:?}", process.pid());
+            for task_pid in tasks {
+                if let Some(task) = s.process(*task_pid) {
+                    println!("Task {:?}: {:?}", task.pid(), task.name());
+                }
+            }
+        }
     }
 }
