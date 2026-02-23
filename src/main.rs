@@ -99,6 +99,8 @@ fn main() {
     else {
         println!("Please input a valid system resource. Only current valid resource is \"cpu\"");
     }
+    println!("testing getting cpu usage from sysinfo.");
+    get_cpu_usage_from_pid(hytale_pid);
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
@@ -177,5 +179,12 @@ fn get_cpu_usage_from_pid(pid: u32) {
     let s = System::new_all();
     if let Some(process) = s.process(Pid::from_u32(pid)) {
         println!("{:?}", process.name());
+        println!("{:?}", process.exe());
+        println!("{}", process.pid());
+        println!(
+            "current cpu util for pid:{} is {}%",
+            pid,
+            process.cpu_usage()
+        );
     }
 }
