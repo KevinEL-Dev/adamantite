@@ -1,7 +1,7 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::Parser;
 use std::process::{Command, Stdio};
-use sysinfo::{Networks, Pid, System};
+use sysinfo::{Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 struct Cli {
@@ -176,7 +176,12 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     return hytale_cpu_usage;
 }
 fn get_cpu_usage_from_pid(pid: u32) {
-    let s = System::new_all();
+    let mut s = System::new_all();
+    s.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::nothing().with_cpu(),
+    );
     if let Some(process) = s.process(Pid::from_u32(pid)) {
         println!("{:?}", process.name());
         println!("{:?}", process.exe());
@@ -186,7 +191,6 @@ fn get_cpu_usage_from_pid(pid: u32) {
             pid,
             process.cpu_usage()
         );
-
         if let Some(tasks) = process.tasks() {
             println!("Listing tasks for process {:?}", process.pid());
             for task_pid in tasks {
