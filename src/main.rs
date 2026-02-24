@@ -43,7 +43,8 @@ fn main() {
             }
             total_system_cpu_usage += current_system_cpu_usage / total_available_cpu_percentage;
 
-            let hytale_curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
+            //let hytale_curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
+            let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
 
             hytale_total_cpu_usage += hytale_curr_cpu_usage;
             counter += 1;
