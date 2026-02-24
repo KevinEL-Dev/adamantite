@@ -190,13 +190,13 @@ fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     );
     let mut total_cpu_usage: f32 = 0.0;
     if let Some(process) = s.process(Pid::from_u32(pid)) {
-        println!("{:?}", process.name());
+        /*println!("{:?}", process.name());
         println!("{:?}", process.exe());
-        println!("{}", process.pid());
+        println!("{}", process.pid());*/
         let top_pid_cpu_usage = process.cpu_usage();
-        println!("current cpu util for pid:{} is {}%", pid, top_pid_cpu_usage,);
+        /*println!("current cpu util for pid:{} is {}%", pid, top_pid_cpu_usage,);*/
         if let Some(tasks) = process.tasks() {
-            println!("Listing tasks for process {:?}", process.pid());
+            /*println!("Listing tasks for process {:?}", process.pid());*/
             for task_pid in tasks {
                 if let Some(task) = s.process(*task_pid) {
                     let curr_cpu_usage = task.cpu_usage();
