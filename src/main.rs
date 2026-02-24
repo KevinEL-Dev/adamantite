@@ -31,19 +31,16 @@ fn main() {
         let mut hytale_total_cpu_usage: f32 = 0.0;
         let mut total_system_cpu_usage: f32 = 0.0;
         let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
-        /*get_cpu_usage_from_pid(hytale_pid);*/
         while diff < time_delta {
             sys.refresh_cpu_usage();
             let mut current_system_cpu_usage: f32 = 0.0;
             end_time = Utc::now().time();
             diff = end_time - start_time;
             for cpu in sys.cpus() {
-                //println!("{}%", cpu.cpu_usage());
                 current_system_cpu_usage += cpu.cpu_usage();
             }
             total_system_cpu_usage += current_system_cpu_usage / total_available_cpu_percentage;
 
-            //let hytale_curr_cpu_usage = get_hytale_total_cpu_usage(hytale_pid);
             let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
 
             hytale_total_cpu_usage += hytale_curr_cpu_usage;
@@ -100,12 +97,6 @@ fn main() {
     else {
         println!("Please input a valid system resource. Only current valid resource is \"cpu\"");
     }
-    println!("testing getting cpu usage from sysinfo.");
-    let total_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
-    println!(
-        "Total cpu usage for all tasks under and including pid:{} is {}%",
-        hytale_pid, total_cpu_usage
-    );
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
@@ -190,13 +181,7 @@ fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     );
     let mut total_cpu_usage: f32 = 0.0;
     if let Some(process) = s.process(Pid::from_u32(pid)) {
-        /*println!("{:?}", process.name());
-        println!("{:?}", process.exe());
-        println!("{}", process.pid());*/
-        let top_pid_cpu_usage = process.cpu_usage();
-        /*println!("current cpu util for pid:{} is {}%", pid, top_pid_cpu_usage,);*/
         if let Some(tasks) = process.tasks() {
-            /*println!("Listing tasks for process {:?}", process.pid());*/
             for task_pid in tasks {
                 if let Some(task) = s.process(*task_pid) {
                     let curr_cpu_usage = task.cpu_usage();
