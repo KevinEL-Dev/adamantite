@@ -182,6 +182,7 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
 }
 fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     let mut s = System::new_all();
+    std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
     s.refresh_processes_specifics(
         ProcessesToUpdate::All,
         true,
