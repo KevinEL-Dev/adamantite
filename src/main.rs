@@ -199,12 +199,6 @@ fn get_cpu_usage_from_pid(pid: u32) -> f32 {
             for task_pid in tasks {
                 if let Some(task) = s.process(*task_pid) {
                     let curr_cpu_usage = task.cpu_usage();
-                    println!(
-                        "Task {:?}: {:?}, cpu usage {}%",
-                        task.pid(),
-                        task.name(),
-                        curr_cpu_usage,
-                    );
                     total_cpu_usage += curr_cpu_usage;
                 }
             }
