@@ -100,7 +100,11 @@ fn main() {
         println!("Please input a valid system resource. Only current valid resource is \"cpu\"");
     }
     println!("testing getting cpu usage from sysinfo.");
-    get_cpu_usage_from_pid(hytale_pid);
+    let total_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
+    println!(
+        "Total cpu usage for all tasks under and including pid:{} is {}%",
+        hytale_pid, total_cpu_usage
+    );
 }
 fn find_pid_of_hytale() -> u32 {
     let ps_child = Command::new("/bin/ps")
@@ -175,7 +179,7 @@ fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
     let hytale_cpu_usage: f32 = s.trim().parse().expect("not a valid number");
     return hytale_cpu_usage;
 }
-fn get_cpu_usage_from_pid(pid: u32) {
+fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     let mut s = System::new_all();
     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
     s.refresh_processes_specifics(
@@ -183,27 +187,29 @@ fn get_cpu_usage_from_pid(pid: u32) {
         true,
         ProcessRefreshKind::nothing().with_cpu(),
     );
+    let mut total_cpu_usage: f32 = 0.0;
     if let Some(process) = s.process(Pid::from_u32(pid)) {
         println!("{:?}", process.name());
         println!("{:?}", process.exe());
         println!("{}", process.pid());
-        println!(
-            "current cpu util for pid:{} is {}%",
-            pid,
-            process.cpu_usage()
-        );
+        let top_pid_cpu_usage = process.cpu_usage();
+        println!("current cpu util for pid:{} is {}%", pid, top_pid_cpu_usage,);
+        total_cpu_usage += top_pid_cpu_usage;
         if let Some(tasks) = process.tasks() {
             println!("Listing tasks for process {:?}", process.pid());
             for task_pid in tasks {
                 if let Some(task) = s.process(*task_pid) {
+                    let curr_cpu_usage = task.cpu_usage();
                     println!(
                         "Task {:?}: {:?}, cpu usage {}%",
                         task.pid(),
                         task.name(),
-                        task.cpu_usage()
+                        curr_cpu_usage,
                     );
+                    total_cpu_usage += curr_cpu_usage;
                 }
             }
         }
     }
+    return total_cpu_usage;
 }
