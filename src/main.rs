@@ -70,29 +70,6 @@ fn main() {
     } else if args.system_resource == "mem" {
         let system_total_memory = sys.total_memory();
 
-        /*let system_mem_in_bytes = sys.used_memory();*/
-        /*let mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
-
-        // to get decimal on prints
-        let mem_in_gigabytes = return_mem_in_gigabytes(mem_in_bytes as f64);
-        let system_mem_in_gigabytes = return_mem_in_gigabytes(system_mem_in_bytes as f64);
-        println!("mem usage of hytale is {} gb", mem_in_gigabytes);
-        println!(
-            "mem usage of entire system is {} gb",
-            system_mem_in_gigabytes
-        );
-        let hytale_usage_percentage =
-            return_mem_usage(mem_in_bytes as f64, system_total_memory as f64);
-        println!(
-            "mem usage in percentage for hytale is {}%",
-            hytale_usage_percentage
-        );
-        println!(
-            "mem usage in percentage for total system without hytale is {}%",
-            return_mem_usage(system_mem_in_bytes as f64, system_total_memory as f64)
-                - hytale_usage_percentage
-        );*/
-
         let mut total_mem_usage_in_bytes = 0;
         let mut total_hytale_mem_usage_in_bytes = 0;
         let mut counter = 0;
@@ -113,13 +90,13 @@ fn main() {
         let average_hytale_mem_usage_gb = total_hytale_mem_in_gigabytes / counter as f64;
 
         println!(
-            "average mem usage of hytale over {} seconds is {:.2} gb.",
+            "Average mem usage of hytale over {} seconds is {:.2} gb.",
             args.time_seconds, average_hytale_mem_usage_gb
         );
         let average_system_mem_usage_gb = total_mem_in_gigabytes / counter as f64;
 
         println!(
-            "average mem usage of entire system over {} seconds is {:.2} gb.",
+            "Average mem usage of entire system over {} seconds is {:.2} gb.",
             args.time_seconds, average_system_mem_usage_gb
         );
         let average_hytale_mem_usage = return_mem_usage(
@@ -127,7 +104,7 @@ fn main() {
             system_total_memory as f64,
         );
         println!(
-            "average mem usage in percentage for hytale over {} seconds is {:.2}%",
+            "Average mem usage in percentage for hytale over {} seconds is {:.2}%",
             args.time_seconds, average_hytale_mem_usage
         );
         let average_system_mem_usage = return_mem_usage(
@@ -135,11 +112,11 @@ fn main() {
             system_total_memory as f64,
         );
         println!(
-            "average mem usage in percentage for entire system over {} seconds is {:.2}%",
+            "Average mem usage in percentage for entire system over {} seconds is {:.2}%",
             args.time_seconds, average_system_mem_usage
         );
         println!(
-            "average mem usage in percentage for entire system without hytale processes over {} seconds is {:.2}%",
+            "Average mem usage in percentage for entire system without hytale processes over {} seconds is {:.2}%",
             args.time_seconds,
             average_system_mem_usage - average_hytale_mem_usage
         );
@@ -161,7 +138,9 @@ fn main() {
         }
     }*/
     else {
-        println!("Please input a valid system resource. Only current valid resource is \"cpu\"");
+        println!(
+            "Please input a valid system resource. Only current valid resources are \"cpu\" and \"mem\""
+        );
     }
 }
 fn find_pid_of_hytale() -> u32 {
