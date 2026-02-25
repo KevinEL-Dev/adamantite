@@ -105,31 +105,38 @@ fn main() {
         let total_mem_in_gigabytes = return_mem_in_gigabytes(total_mem_usage_in_bytes as f64);
         let total_hytale_mem_in_gigabytes =
             return_mem_in_gigabytes(total_hytale_mem_usage_in_bytes as f64);
+        let average_hytale_mem_usage_gb = total_hytale_mem_in_gigabytes / counter as f64;
+
         println!(
             "average mem usage of hytale over {} seconds is {} gb.",
-            args.time_seconds,
-            total_hytale_mem_in_gigabytes / counter as f64
+            args.time_seconds, average_hytale_mem_usage_gb
         );
+        let average_system_mem_usage_gb = total_mem_in_gigabytes / counter as f64;
+
         println!(
             "average mem usage of entire system over {} seconds is {} gb.",
-            args.time_seconds,
-            total_mem_in_gigabytes / counter as f64
+            args.time_seconds, average_system_mem_usage_gb
+        );
+        let average_hytale_mem_usage = return_mem_usage(
+            total_hytale_mem_usage_in_bytes as f64 / counter as f64,
+            system_total_memory as f64,
         );
         println!(
             "average mem usage in percentage for hytale over {} seconds is {}%",
-            args.time_seconds,
-            return_mem_usage(
-                total_hytale_mem_usage_in_bytes as f64 / counter as f64,
-                system_total_memory as f64
-            )
+            args.time_seconds, average_hytale_mem_usage
+        );
+        let average_system_mem_usage = return_mem_usage(
+            total_mem_usage_in_bytes as f64 / counter as f64,
+            system_total_memory as f64,
         );
         println!(
             "average mem usage in percentage for entire system over {} seconds is {}%",
+            args.time_seconds, average_system_mem_usage
+        );
+        println!(
+            "average mem usage in percentage for entire system without hytale processes over {} seconds is {}%",
             args.time_seconds,
-            return_mem_usage(
-                total_mem_usage_in_bytes as f64 / counter as f64,
-                system_total_memory as f64
-            )
+            average_system_mem_usage - average_hytale_mem_usage
         );
     }
     /* else if args.system_resource == "net" {
