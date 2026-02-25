@@ -2,13 +2,15 @@ use chrono::{TimeDelta, prelude::*};
 use clap::Parser;
 use std::process::{Command, Stdio};
 use sysinfo::{Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
+/// Track system resources over time
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 struct Cli {
-    // type should be the cpu
+    /// The resource you wish to track
     #[arg(short, long)]
     system_resource: String,
 
+    /// Time you wish to track said resource
     #[arg(short, long, default_value_t = 1)]
     time_seconds: i64,
 }
