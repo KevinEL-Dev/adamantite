@@ -45,7 +45,8 @@ fn main() {
     );
     println!(
         "mem usage in percentage for total system without hytale is {}%",
-        return_mem_usage(mem_in_bytes as f64, system_total_memory as f64) - hytale_usage_percentage
+        return_mem_usage(system_mem_in_bytes as f64, system_total_memory as f64)
+            - hytale_usage_percentage
     );
 
     if args.system_resource == "cpu" {
