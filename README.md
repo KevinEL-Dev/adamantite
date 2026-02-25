@@ -54,7 +54,7 @@ This command will lastly provide the average cpu load your entire system experin
 
 Example command:
 ```
-$ cargo run -- -s mem -t 2
+$ cargo run -- -s mem -t 5
 ```
 Output would look like this 
 ![Project Screenshot](./assets/mem_t_5_output.png)
