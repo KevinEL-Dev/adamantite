@@ -26,13 +26,19 @@ fn main() {
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
 
+    let system_mem_in_bytes = sys.used_memory();
     let mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
     let kb: u64 = 1000;
     let divisor = num::pow(kb, 3);
 
     // to get decimal on prints
     let mem_in_gigabytes = (mem_in_bytes as f64) / (divisor as f64);
+    let system_mem_in_gigabytes = return_mem_in_gigabytes(system_mem_in_bytes as f64);
     println!("mem usage of hytale is {} gb", mem_in_gigabytes);
+    println!(
+        "mem usage of entire system is {} gb",
+        system_mem_in_gigabytes
+    );
 
     if args.system_resource == "cpu" {
         let mut counter = 0;
@@ -207,4 +213,9 @@ fn get_mem_usage_from_pid(pid: u32) -> u64 {
         pid_mem_usage = process.memory();
     }
     return pid_mem_usage;
+}
+fn return_mem_in_gigabytes(mem_in_bytes: f64) -> f64 {
+    let kb: u64 = 1000;
+    let divisor = num::pow(kb, 3);
+    (mem_in_bytes as f64) / (divisor as f64)
 }
