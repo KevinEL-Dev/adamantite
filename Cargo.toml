@@ -1,8 +1,8 @@
 [package]
 name = "adamantite"
 license = "MIT"
-version = "0.1.3"
-authors = ["KevinEL-Dev <contact@zookfish.com>"]
+version = "0.1.4"
+authors = ["KevinEL-Dev <dev@zookfish.com>"]
 description = "Cli tool to provide system resource utilization for Hytale server owners"
 repository = "https://github.com/KevinEL-Dev/adamantite"
 edition = "2024"
