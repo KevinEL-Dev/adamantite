@@ -25,19 +25,27 @@ fn main() {
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
+    let system_total_memory = sys.total_memory();
 
     let system_mem_in_bytes = sys.used_memory();
     let mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
-    let kb: u64 = 1000;
-    let divisor = num::pow(kb, 3);
 
     // to get decimal on prints
-    let mem_in_gigabytes = (mem_in_bytes as f64) / (divisor as f64);
+    let mem_in_gigabytes = return_mem_in_gigabytes(mem_in_bytes as f64);
     let system_mem_in_gigabytes = return_mem_in_gigabytes(system_mem_in_bytes as f64);
     println!("mem usage of hytale is {} gb", mem_in_gigabytes);
     println!(
         "mem usage of entire system is {} gb",
         system_mem_in_gigabytes
+    );
+    let hytale_usage_percentage = return_mem_usage(mem_in_bytes as f64, system_total_memory as f64);
+    println!(
+        "mem usage in percentage for hytale is {}%",
+        hytale_usage_percentage
+    );
+    println!(
+        "mem usage in percentage for total system without hytale is {}%",
+        return_mem_usage(mem_in_bytes as f64, system_total_memory as f64) - hytale_usage_percentage
     );
 
     if args.system_resource == "cpu" {
@@ -217,5 +225,8 @@ fn get_mem_usage_from_pid(pid: u32) -> u64 {
 fn return_mem_in_gigabytes(mem_in_bytes: f64) -> f64 {
     let kb: u64 = 1000;
     let divisor = num::pow(kb, 3);
-    (mem_in_bytes as f64) / (divisor as f64)
+    (mem_in_bytes) / (divisor as f64)
+}
+fn return_mem_usage(mem_in_bytes: f64, system_total_mem_in_bytes: f64) -> f64 {
+    (mem_in_bytes / system_total_mem_in_bytes) * 100.0
 }
