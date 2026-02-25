@@ -25,30 +25,6 @@ fn main() {
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
-    let system_total_memory = sys.total_memory();
-
-    let system_mem_in_bytes = sys.used_memory();
-    let mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
-
-    // to get decimal on prints
-    let mem_in_gigabytes = return_mem_in_gigabytes(mem_in_bytes as f64);
-    let system_mem_in_gigabytes = return_mem_in_gigabytes(system_mem_in_bytes as f64);
-    println!("mem usage of hytale is {} gb", mem_in_gigabytes);
-    println!(
-        "mem usage of entire system is {} gb",
-        system_mem_in_gigabytes
-    );
-    let hytale_usage_percentage = return_mem_usage(mem_in_bytes as f64, system_total_memory as f64);
-    println!(
-        "mem usage in percentage for hytale is {}%",
-        hytale_usage_percentage
-    );
-    println!(
-        "mem usage in percentage for total system without hytale is {}%",
-        return_mem_usage(system_mem_in_bytes as f64, system_total_memory as f64)
-            - hytale_usage_percentage
-    );
-
     if args.system_resource == "cpu" {
         let mut counter = 0;
         let mut hytale_total_cpu_usage: f32 = 0.0;
@@ -86,22 +62,77 @@ fn main() {
             args.time_seconds,
             (total_system_cpu_usage / counter as f32) * 100.0
         );
-    }
-    /*else if args.system_resource == "mem" {
+    } else if args.system_resource == "mem" {
+        let system_total_memory = sys.total_memory();
+
+        /*let system_mem_in_bytes = sys.used_memory();*/
+        /*let mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
+
+        // to get decimal on prints
+        let mem_in_gigabytes = return_mem_in_gigabytes(mem_in_bytes as f64);
+        let system_mem_in_gigabytes = return_mem_in_gigabytes(system_mem_in_bytes as f64);
+        println!("mem usage of hytale is {} gb", mem_in_gigabytes);
+        println!(
+            "mem usage of entire system is {} gb",
+            system_mem_in_gigabytes
+        );
+        let hytale_usage_percentage =
+            return_mem_usage(mem_in_bytes as f64, system_total_memory as f64);
+        println!(
+            "mem usage in percentage for hytale is {}%",
+            hytale_usage_percentage
+        );
+        println!(
+            "mem usage in percentage for total system without hytale is {}%",
+            return_mem_usage(system_mem_in_bytes as f64, system_total_memory as f64)
+                - hytale_usage_percentage
+        );*/
+
+        let mut total_mem_usage_in_bytes = 0;
+        let mut total_hytale_mem_usage_in_bytes = 0;
+        let mut counter = 0;
         while diff < time_delta {
             // only refresh ram
             sys.refresh_memory_specifics(sysinfo::MemoryRefreshKind::everything().with_ram());
             end_time = Utc::now().time();
             diff = end_time - start_time;
-            let mem_in_bytes = sys.used_memory();
-            let kb: u64 = 1000;
-            let divisor = num::pow(kb, 3);
-
-            // to get decimal on prints
-            let mem_in_gigabytes = (mem_in_bytes as f64) / (divisor as f64);
-            println!("mem usage {} gb", mem_in_gigabytes);
+            let curr_system_mem_in_bytes = sys.used_memory();
+            let curr_hytale_mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
+            total_mem_usage_in_bytes += curr_system_mem_in_bytes;
+            total_hytale_mem_usage_in_bytes += curr_hytale_mem_in_bytes;
+            counter += 1;
         }
-    } else if args.system_resource == "net" {
+        let total_mem_in_gigabytes = return_mem_in_gigabytes(total_mem_usage_in_bytes as f64);
+        let total_hytale_mem_in_gigabytes =
+            return_mem_in_gigabytes(total_hytale_mem_usage_in_bytes as f64);
+        println!(
+            "average mem usage of hytale over {} seconds is {} gb.",
+            args.time_seconds,
+            total_hytale_mem_in_gigabytes / counter as f64
+        );
+        println!(
+            "average mem usage of entire system over {} seconds is {} gb.",
+            args.time_seconds,
+            total_mem_in_gigabytes / counter as f64
+        );
+        println!(
+            "average mem usage in percentage for hytale over {} seconds is {}%",
+            args.time_seconds,
+            return_mem_usage(
+                total_hytale_mem_usage_in_bytes as f64 / counter as f64,
+                system_total_memory as f64
+            )
+        );
+        println!(
+            "average mem usage in percentage for entire system over {} seconds is {}%",
+            args.time_seconds,
+            return_mem_usage(
+                total_mem_usage_in_bytes as f64 / counter as f64,
+                system_total_memory as f64
+            )
+        );
+    }
+    /* else if args.system_resource == "net" {
         let mut networks = Networks::new_with_refreshed_list();
         println!("=> networks:");
         while diff < time_delta {
