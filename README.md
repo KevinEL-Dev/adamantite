@@ -10,7 +10,12 @@ My reasoning for building this tool is because I wanted to learn rust. But also 
 # Usage Currently
 If you are interested in cloning this repo and attempting to run this program I'll go over this now.
 
-Currently there is no binary but once you clone this repo you can do the following.
+## Installation methods
+There is binary realeses for linux, you can clone this repo, or run 
+```bash
+cargo install adamantite
+```
+If you clone this repo you can do the following
 
 ```
 $ cargo run -- [OPTIONS] --system-resource <SYSTEM_RESOURCE>
@@ -33,9 +38,7 @@ There are three system resources that you can monitor for x seconds:
 
 These are cpu, memory, or network(as in the traffic).
 
-If you pass in the system resource "cpu", it will print every logical core cpu% usage for x seconds.
-If you pass in the system resource "mem", it will print your total memory usage on your system for x seconds.
-If you pass in the system resource "net", it will print current network traffic on your system for x seconds.
+
 
 As of now, running the command where x is seconds
 ```
@@ -43,10 +46,11 @@ cargo run -- -s cpu -t x
 ```
 Output example:
 
-![Project Screenshot](./assets/cpu_t_10_output.png)
+![Project Screenshot](./assets/cpu_t_5_output.png)
 
-This command above will return the avg amount of cpu cores being used by hytale. Not necessary useful information considering you need to understand how the rest of the system is doing.In the above example that is how my Hytale server performs when one person joins.
+This command will return to you the average number of cores being used by hytale. Adamantite will also provide the average cpu cores your system is using so you have a refrence on how hytale is performing compared to the rest of your system.
 
+This command will lastly provide the average cpu load your entire system experineced over x seconds.
 
 Example command:
 ```
@@ -55,17 +59,20 @@ $ cargo run -- -s mem -t 2
 Output would look like this 
 ![Project Screenshot](./assets/mem_t_2_output.png)
 
-I cut out redundant info but it will print your mem usage for your system.
-As for the other output, it will find a parent Hytale process and pass that to /bin/top which will get how much cpu% usage its using.
-Currently adamantite will get the number of cpus your system has and determine how many logical cpus Hytale is using.
-### Formula for this
-(hytale_cpu_usage) / (100*number_of_cpus)
+This command will provide the average memory usage in gigabytes over x seconds. It will also provide the average memory usage in gigabytes as well for the entire system over x seconds.
+
+For the rest of the output, adamantite will provide average memory usage as a percentage for hytale, your entire system including hytale, and your entire system excluding hytale as well.
 
 ## What is being worked and plans for future
-Say we track 5 seconds of cpu usage from Hytale and its processes.We need to follow Hytale's logs that it produces at that same time.
+Maybe might be possible to use previous runs of commands and compare them with other runs. Say you ran the adamantite to track hytale's memory usage over 5 seconds while the system was idle. Now say you want to compare that when you have three people in your server. I was thinking you provide two outputs from the command and compare them.Might be cool to see how hytale performance differs.
+
+Say we track 5 seconds of cpu usage from Hytale and its processes. We need to follow Hytale's logs that it produces at that same time.
 
 There are two possible routes and probably more to do this but these are what came to my mind first.
 
 We can go the concurrency route where we instantiate two threads, one thread to get Hytales cpu usage and another thread to parse Hytale logs.
 
 If not concurrency, I looked into using journalctl. So once we get the cpu usage for those 5 seconds we just pass arguments to journalctl to show me Hytale's logs for the last 5 seconds and parse it from there
+
+### AI ?
+Currently no AI generated code.
