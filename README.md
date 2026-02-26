@@ -78,7 +78,7 @@ Example command:
 $ cargo run -- track mem -t 5
 ```
 Output would look like this 
-![Project Screenshot](./assets/mem_t_5_output.png)
+![Project Screenshot](./assets/mem_t_5_output_new.png)
 
 This command will provide the average memory usage in gigabytes over x seconds. It will also provide the average memory usage in gigabytes as well for the entire system over x seconds.
 
