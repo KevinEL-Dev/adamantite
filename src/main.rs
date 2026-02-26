@@ -1,18 +1,31 @@
 use chrono::{TimeDelta, prelude::*};
-use clap::Parser;
+use clap::{Parser, Subcommand, ValueEnum};
 use std::process::{Command, Stdio};
 use sysinfo::{Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 /// Track system resources over time
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 struct Cli {
-    /// The resource you wish to track
-    #[arg(short, long)]
-    system_resource: String,
+    #[command[subcommand]]
+    command: Option<Commands>,
+}
 
-    /// Time you wish to track said resource
-    #[arg(short, long, default_value_t = 1)]
-    time_seconds: i64,
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum SystemResource {
+    /// System resource cpu
+    Cpu,
+    /// System resource memory
+    Mem,
+}
+#[derive(Subcommand)]
+enum Commands {
+    /// Tracks a system resource
+    Track {
+        #[arg(value_enum)]
+        system_resource: SystemResource,
+        #[arg(short, long, default_value_t = 1)]
+        time_seconds: i64,
+    },
 }
 fn main() {
     // parges user input
@@ -21,13 +34,36 @@ fn main() {
     let mut end_time = Utc::now().time();
     let mut sys = System::new();
     let mut diff = end_time - start_time;
-    let time_delta = TimeDelta::seconds(args.time_seconds);
+    let mut user_selected_time = 1;
+    let mut time_delta = TimeDelta::seconds(user_selected_time);
+    let mut sys_resource = SystemResource::Cpu;
+
+    match &args.command {
+        Some(Commands::Track {
+            system_resource,
+            time_seconds,
+        }) => match system_resource {
+            SystemResource::Cpu => {
+                println!("you choose cpu! also the time arg is {}", time_seconds);
+                time_delta = TimeDelta::seconds(*time_seconds);
+                sys_resource = *system_resource;
+                user_selected_time = *time_seconds;
+            }
+            SystemResource::Mem => {
+                println!("you choose memory! also the time arg is {} ", time_seconds);
+                time_delta = TimeDelta::seconds(*time_seconds);
+                sys_resource = *system_resource;
+                user_selected_time = *time_seconds;
+            }
+        },
+        None => {}
+    }
 
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
-    if args.system_resource == "cpu" {
+    if sys_resource == SystemResource::Cpu {
         let mut counter = 0;
         let mut hytale_total_cpu_usage: f32 = 0.0;
         let mut total_system_cpu_usage: f32 = 0.0;
@@ -50,26 +86,26 @@ fn main() {
         }
         println!(
             "For {} seconds hytale on average used {:.2} cpus",
-            args.time_seconds,
+            user_selected_time,
             ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                 * num_of_cpus
         );
         println!(
             "For {} seconds your system on average used {:.2} cpus",
-            args.time_seconds,
+            user_selected_time,
             (total_system_cpu_usage / counter as f32) * (num_of_cpus)
         );
         println!(
             "For {} seconds your system on average was at {:.2}% load",
-            args.time_seconds,
+            user_selected_time,
             (total_system_cpu_usage / counter as f32) * 100.0
         );
         println!(
             "For {} seconds hytale on average used {:.2}% load",
-            args.time_seconds,
+            user_selected_time,
             ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage) * 100.0
         );
-    } else if args.system_resource == "mem" {
+    } else if sys_resource == SystemResource::Mem {
         let system_total_memory = sys.total_memory();
 
         let mut total_mem_usage_in_bytes = 0;
@@ -93,13 +129,13 @@ fn main() {
 
         println!(
             "Average mem usage of hytale over {} seconds is {:.2} gb.",
-            args.time_seconds, average_hytale_mem_usage_gb
+            user_selected_time, average_hytale_mem_usage_gb
         );
         let average_system_mem_usage_gb = total_mem_in_gigabytes / counter as f64;
 
         println!(
             "Average mem usage of entire system over {} seconds is {:.2} gb.",
-            args.time_seconds, average_system_mem_usage_gb
+            user_selected_time, average_system_mem_usage_gb
         );
         let average_hytale_mem_usage = return_mem_usage(
             total_hytale_mem_usage_in_bytes as f64 / counter as f64,
@@ -107,7 +143,7 @@ fn main() {
         );
         println!(
             "Average mem usage in percentage for hytale over {} seconds is {:.2}%",
-            args.time_seconds, average_hytale_mem_usage
+            user_selected_time, average_hytale_mem_usage
         );
         let average_system_mem_usage = return_mem_usage(
             total_mem_usage_in_bytes as f64 / counter as f64,
@@ -115,11 +151,11 @@ fn main() {
         );
         println!(
             "Average mem usage in percentage for entire system over {} seconds is {:.2}%",
-            args.time_seconds, average_system_mem_usage
+            user_selected_time, average_system_mem_usage
         );
         println!(
             "Average mem usage in percentage for entire system without hytale processes over {} seconds is {:.2}%",
-            args.time_seconds,
+            user_selected_time,
             average_system_mem_usage - average_hytale_mem_usage
         );
     }
@@ -184,39 +220,6 @@ fn find_pid_of_hytale() -> u32 {
     let s = String::from_utf8_lossy(&output.stdout).to_string();
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
     return pid_from_s;
-}
-fn get_hytale_total_cpu_usage(hytale_pid: u32) -> f32 {
-    let result_arg_top = format!("{}", hytale_pid);
-    let top_child = Command::new("/bin/top")
-        .arg("-b")
-        .arg("-n")
-        .arg("1")
-        .arg("-p")
-        .arg(result_arg_top)
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("failed to start ps");
-    let top_output = top_child.stdout.expect("failed to start top process");
-    let result_arg = format!(
-        "$1 == \"PID\" {{block_num++; next}} block_num == 1 {{sum += $9;}} END {{print sum}}"
-    );
-
-    let awk_child = Command::new("/bin/awk")
-        .arg(result_arg)
-        .stdin(Stdio::from(top_output))
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("failed to start awk process");
-    let output = awk_child
-        .wait_with_output()
-        .expect("failed to wait for awk");
-    /*println!(
-        "output from awk\ncpu usage is {}%",
-        String::from_utf8_lossy(&output.stdout).trim()
-    );*/
-    let s = String::from_utf8_lossy(&output.stdout).to_string();
-    let hytale_cpu_usage: f32 = s.trim().parse().expect("not a valid number");
-    return hytale_cpu_usage;
 }
 fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     let mut s = System::new_all();
