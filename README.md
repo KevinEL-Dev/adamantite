@@ -67,7 +67,7 @@ cargo run -- track cpu -t x
 ```
 Output example:
 
-![Project Screenshot](./assets/cpu_t_5_new.png.png)
+![Project Screenshot](./assets/cpu_t_5_new.png)
 
 This command will return to you the average number of cores being used by hytale. Adamantite will also provide the average cpu cores your system is using so you have a refrence on how hytale is performing compared to the rest of your system.
 
