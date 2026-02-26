@@ -34,7 +34,7 @@ Options:
 ```
 
 ```
-cargo run -- track
+cargo run -- track --help
 
 Tracks a system resource
 
