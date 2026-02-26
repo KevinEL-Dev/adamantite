@@ -1,7 +1,7 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::{Parser, Subcommand, ValueEnum};
 use std::process::{Command, Stdio};
-use sysinfo::{Networks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
+use sysinfo::{Disks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 /// Track system resources over time
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
@@ -37,6 +37,10 @@ fn main() {
     let mut user_selected_time = 1;
     let mut time_delta = TimeDelta::seconds(user_selected_time);
     let mut sys_resource = SystemResource::Cpu;
+    let disks = Disks::new_with_refreshed_list();
+    for disk in disks.list() {
+        println!("[{:?}] {:?}", disk.name(), disk.usage());
+    }
 
     match &args.command {
         Some(Commands::Track {

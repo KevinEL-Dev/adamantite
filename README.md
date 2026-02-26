@@ -84,7 +84,11 @@ This command will provide the average memory usage in gigabytes over x seconds. 
 
 For the rest of the output, adamantite will provide average memory usage as a percentage for hytale, your entire system including hytale, and your entire system excluding hytale as well.
 
+
+## Currently investigating feature to add
+Currently looking into providing disk metrics that should be useful in determining perfomance drops for you server
 ## What is being worked and plans for future
+
 Maybe might be possible to use previous runs of commands and compare them with other runs. Say you ran the adamantite to track hytale's memory usage over 5 seconds while the system was idle. Now say you want to compare that when you have three people in your server. I was thinking you provide two outputs from the command and compare them.Might be cool to see how hytale performance differs.
 
 Say we track 5 seconds of cpu usage from Hytale and its processes. We need to follow Hytale's logs that it produces at that same time.
