@@ -1,5 +1,8 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::{Parser, Subcommand, ValueEnum};
+use std::fs::File;
+use std::io::prelude::*;
+use std::path::Path;
 use std::process::{Command, Stdio};
 use sysinfo::{Disks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 /// Track system resources over time
@@ -42,6 +45,13 @@ fn main() {
         println!("[{:?}] {:?}", disk.name(), disk.usage());
     }
 
+    let path_to_psi_io = Path::new("/proc/pressure/io");
+
+    let mut f = File::open(path_to_psi_io).expect("failed to open this file");
+    let mut content = String::new();
+    f.read_to_string(&mut content)
+        .expect("failed to read the file");
+    println!("{}", content);
     match &args.command {
         Some(Commands::Track {
             system_resource,
