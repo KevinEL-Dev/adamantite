@@ -44,13 +44,11 @@ fn main() {
             time_seconds,
         }) => match system_resource {
             SystemResource::Cpu => {
-                println!("you choose cpu! also the time arg is {}", time_seconds);
                 time_delta = TimeDelta::seconds(*time_seconds);
                 sys_resource = *system_resource;
                 user_selected_time = *time_seconds;
             }
             SystemResource::Mem => {
-                println!("you choose memory! also the time arg is {} ", time_seconds);
                 time_delta = TimeDelta::seconds(*time_seconds);
                 sys_resource = *system_resource;
                 user_selected_time = *time_seconds;
