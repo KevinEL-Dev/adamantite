@@ -18,31 +18,52 @@ cargo install adamantite
 If you clone this repo you can do the following
 
 ```
-$ cargo run -- [OPTIONS] --system-resource <SYSTEM_RESOURCE>
+$ cargo run -- [COMMAND]
 ```
 
 ```
-Usage: adamantite [OPTIONS] --system-resource <SYSTEM_RESOURCE>
+Usage: adamantite [COMMAND] 
+
+Commands:
+  track  Tracks a system resource
+  help   Print this message or the help of the given subcommand(s)
 
 Options:
-  -s, --system-resource <SYSTEM_RESOURCE>
-  -t, --time-seconds <TIME_SECONDS>        [default: 1]
-  -h, --help                               Print help
-  -V, --version                            Print version
+  -h, --help     Print help
+  -V, --version  Print version
+```
 
 ```
-There are three system resources that you can monitor for x seconds:
+cargo run -- track
+
+Tracks a system resource
+
+Usage: adamantite track [OPTIONS] <SYSTEM_RESOURCE>
+
+Arguments:
+  <SYSTEM_RESOURCE>
+          Possible values:
+          - cpu: System resource cpu
+          - mem: System resource memory
+
+Options:
+  -t, --time-seconds <TIME_SECONDS>
+          [default: 1]
+
+  -h, --help
+          Print help (see a summary with '-h')
+```
+There are two system resources that you can monitor for x seconds:
 - cpu
 - mem
-- net
 
-These are cpu, memory, or network(as in the traffic).
+These are cpu, memory.
 
 
 
 As of now, running the command where x is seconds
 ```
-cargo run -- -s cpu -t x 
+cargo run -- track cpu -t x 
 ```
 Output example:
 
@@ -54,7 +75,7 @@ This command will lastly provide the average cpu load your entire system experin
 
 Example command:
 ```
-$ cargo run -- -s mem -t 5
+$ cargo run -- track mem -t 5
 ```
 Output would look like this 
 ![Project Screenshot](./assets/mem_t_5_output.png)
