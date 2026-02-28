@@ -46,12 +46,18 @@ fn main() {
     }
 
     let path_to_psi_io = Path::new("/proc/pressure/io");
+    let path_to_psi_mem = Path::new("/proc/pressure/memory");
 
     let mut f = File::open(path_to_psi_io).expect("failed to open this file");
     let mut content = String::new();
     f.read_to_string(&mut content)
         .expect("failed to read the file");
     println!("{}", content);
+    let mut f_memory = File::open(path_to_psi_mem).expect("failed to open file memory");
+    let mut content_memory = String::new();
+    f_memory.read_to_string(&mut content_memory)
+        .expect("failed to read file memory");
+    println!("{}", content_memory);
     match &args.command {
         Some(Commands::Track {
             system_resource,
