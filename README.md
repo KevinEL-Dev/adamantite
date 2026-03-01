@@ -20,13 +20,13 @@ If you clone this repo you can do the following
 ```
 $ cargo run -- [COMMAND]
 ```
-
 ```
-Usage: adamantite [COMMAND] 
+Usage: adamantite [COMMAND]
 
 Commands:
-  track  Tracks a system resource
-  help   Print this message or the help of the given subcommand(s)
+  track     Tracks a system resource
+  pressure  Shows how often system work is stalled due to resource contention
+  help      Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
@@ -83,7 +83,26 @@ Output would look like this
 This command will provide the average memory usage in gigabytes over x seconds. It will also provide the average memory usage in gigabytes as well for the entire system over x seconds.
 
 For the rest of the output, adamantite will provide average memory usage as a percentage for hytale, your entire system including hytale, and your entire system excluding hytale as well.
+```
+cargo run -- pressure --help
+```
 
+```
+
+Shows how often system work is stalled due to resource contention
+
+Usage: adamantite pressure <PRESSURE_TYPE>
+
+Arguments:
+  <PRESSURE_TYPE>  The resource to inspect [possible values: io, mem]
+
+Options:
+  -h, --help  Print help (see more with '--help')
+```
+You can view the past pressure for two types: io and mem. Memory pressure is time stalled because memory could not be allocated or reclaimed fast enough. I/O pressure is time spent waiting on disk or storage operations to complete.
+
+### Why is pressure important
+Pressure directly reflects time the server could not advance its game loop, making it a strong indicator of tick instability and perceived lag.
 
 ## Currently investigating feature to add
 Currently looking into providing disk metrics that should be useful in determining perfomance drops for you server
