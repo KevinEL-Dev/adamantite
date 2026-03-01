@@ -1,5 +1,6 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::{Parser, Subcommand, ValueEnum};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -30,6 +31,45 @@ enum Commands {
         time_seconds: i64,
     },
 }
+struct Pressure {
+    some: HashMap<String, f64>,
+    full: HashMap<String, f64>,
+}
+impl Pressure {
+    fn build_pressure(some: Vec<&str>, full: Vec<&str>) -> Pressure {
+        let mut map_some: HashMap<String, f64> = HashMap::new();
+        let mut map_full: HashMap<String, f64> = HashMap::new();
+
+        let mut split_test_arg: Vec<&str> = some[1].split("=").collect();
+        for arg in some.iter().skip(1) {
+            /* first value is avg then percentage*/
+            /* so set first value to string name and second to f64 by parsing the string into f64*/
+            split_test_arg = arg.split("=").collect();
+            let avg_second = split_test_arg[0];
+            let avg_percentage: f64 = split_test_arg[1]
+                .parse::<f64>()
+                .expect("didnt see a float value");
+            /* insert avg_second and avg_percentage as keys into some hashmap and then full hashmap*/
+            map_some.insert(avg_second.to_string(), avg_percentage);
+        }
+        let mut split_test_arg: Vec<&str> = full[1].split("=").collect();
+        for arg in full.iter().skip(1) {
+            /* first value is avg then percentage*/
+            /* so set first value to string name and second to f64 by parsing the string into f64*/
+            split_test_arg = arg.split("=").collect();
+            let avg_second = split_test_arg[0];
+            let avg_percentage: f64 = split_test_arg[1]
+                .parse::<f64>()
+                .expect("didnt see a float value");
+            /* insert avg_second and avg_percentage as keys into some hashmap and then full hashmap*/
+            map_full.insert(avg_second.to_string(), avg_percentage);
+        }
+        Pressure {
+            some: map_some,
+            full: map_full,
+        }
+    }
+}
 fn main() {
     // parges user input
     let args = Cli::parse();
@@ -40,24 +80,11 @@ fn main() {
     let mut user_selected_time = 1;
     let mut time_delta = TimeDelta::seconds(user_selected_time);
     let mut sys_resource = SystemResource::Cpu;
-    let disks = Disks::new_with_refreshed_list();
+    /*let disks = Disks::new_with_refreshed_list();
     for disk in disks.list() {
         println!("[{:?}] {:?}", disk.name(), disk.usage());
-    }
-
-    let path_to_psi_io = Path::new("/proc/pressure/io");
-    let path_to_psi_mem = Path::new("/proc/pressure/memory");
-
-    let mut f = File::open(path_to_psi_io).expect("failed to open this file");
-    let mut content = String::new();
-    f.read_to_string(&mut content)
-        .expect("failed to read the file");
-    println!("{}", content);
-    let mut f_memory = File::open(path_to_psi_mem).expect("failed to open file memory");
-    let mut content_memory = String::new();
-    f_memory.read_to_string(&mut content_memory)
-        .expect("failed to read file memory");
-    println!("{}", content_memory);
+    }*/
+    show_system_pressure();
     match &args.command {
         Some(Commands::Track {
             system_resource,
@@ -275,4 +302,32 @@ fn return_mem_in_gigabytes(mem_in_bytes: f64) -> f64 {
 }
 fn return_mem_usage(mem_in_bytes: f64, system_total_mem_in_bytes: f64) -> f64 {
     (mem_in_bytes / system_total_mem_in_bytes) * 100.0
+}
+fn show_system_pressure() {
+    let path_to_psi_io = Path::new("/proc/pressure/io");
+    let path_to_psi_mem = Path::new("/proc/pressure/memory");
+
+    let mut f = File::open(path_to_psi_io).expect("failed to open this file");
+    let mut content = String::new();
+    f.read_to_string(&mut content)
+        .expect("failed to read the file");
+    let mut f_memory = File::open(path_to_psi_mem).expect("failed to open file memory");
+    let mut content_memory = String::new();
+    f_memory
+        .read_to_string(&mut content_memory)
+        .expect("failed to read file memory");
+
+    let v_f: Vec<&str> = content.lines().collect();
+    let v_f_some: Vec<&str> = v_f[0].split_whitespace().collect();
+    let v_f_full: Vec<&str> = v_f[1].split_whitespace().collect();
+
+    let pressure_example = Pressure::build_pressure(v_f_some, v_f_full);
+    println!("hashmap generated for some");
+    for (key, value) in pressure_example.some.iter() {
+        println!("key: {key} val: {value}");
+    }
+    println!("hashmap generated for full");
+    for (key, value) in pressure_example.some.iter() {
+        println!("key: {key} val: {value}");
+    }
 }
