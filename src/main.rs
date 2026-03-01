@@ -43,6 +43,7 @@ enum Commands {
     },
     /// Shows how often system work is stalled due to resource contention
     Pressure {
+        /// The resource to inspect
         #[arg(value_enum)]
         pressure_type: PressureType,
     },
@@ -50,9 +51,10 @@ enum Commands {
 struct Pressure {
     some: HashMap<String, f64>,
     full: HashMap<String, f64>,
+    pressure_type: PressureType,
 }
 impl Pressure {
-    fn build_pressure(some: Vec<&str>, full: Vec<&str>) -> Pressure {
+    fn build_pressure(some: Vec<&str>, full: Vec<&str>, pressure_type: PressureType) -> Pressure {
         let mut map_some: HashMap<String, f64> = HashMap::new();
         let mut map_full: HashMap<String, f64> = HashMap::new();
 
@@ -83,6 +85,7 @@ impl Pressure {
         Pressure {
             some: map_some,
             full: map_full,
+            pressure_type,
         }
     }
     fn evaluate_pressure(&self) {
@@ -90,9 +93,18 @@ impl Pressure {
         match avg300_val {
             Some(val) => {
                 if *val < LOW_IO_PRESSURE_MAX {
-                    println!("Disk pressure is healthy ({}% sustained)", val);
+                    if self.pressure_type == PressureType::Io {
+                        println!("Io pressure is healthy ({}% sustained)", val);
+                    } else {
+                        println!("Mem pressure is healthy ({}% sustained)", val);
+                    }
                 } else if *val >= MODERATE_IO_PRESSURE_MAX {
                     println!("Disk pressure is concerning ({}% sustained)", val);
+                    if self.pressure_type == PressureType::Io {
+                        println!("Io pressure is concerning ({}% sustained)", val);
+                    } else {
+                        println!("Mem pressure is concerning ({}% sustained)", val);
+                    }
                 }
             }
             None => println!("failed to find the avg300_val"),
@@ -343,11 +355,12 @@ fn show_system_pressure(pressure_type: PressureType) {
 
     match pressure_type {
         PressureType::Io => {
-            let pressure_example = Pressure::build_pressure(v_f_some, v_f_full);
+            let pressure_example = Pressure::build_pressure(v_f_some, v_f_full, PressureType::Io);
             pressure_example.evaluate_pressure();
         }
         PressureType::Mem => {
-            let pressure_example = Pressure::build_pressure(v_f_mem_some, v_f_mem_full);
+            let pressure_example =
+                Pressure::build_pressure(v_f_mem_some, v_f_mem_full, PressureType::Mem);
             pressure_example.evaluate_pressure();
         }
     }
