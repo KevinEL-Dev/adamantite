@@ -221,7 +221,7 @@ fn main() {
                         start_time_for_one_second = Utc::now().time();
                     }
                     counter += 1;
-                    time_delta_200_ms += TimeDelta::milliseconds(100);
+                    time_delta_200_ms += TimeDelta::milliseconds(50);
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
                 println!(
@@ -230,6 +230,7 @@ fn main() {
                     ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                         * num_of_cpus
                 );
+                println!("{:?}",sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 println!(
                     "For {} seconds your system on average used {:.2} cpus",
                     user_selected_time,
