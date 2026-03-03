@@ -18,7 +18,7 @@ struct Cli {
     command: Option<Commands>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 enum SystemResource {
     /// System resource cpu
     Cpu,
@@ -47,6 +47,28 @@ enum Commands {
         #[arg(value_enum)]
         pressure_type: PressureType,
     },
+}
+#[derive(Debug)]
+struct AvgResourceUsage {
+    system_resource: SystemResource,
+    resource_usage_per_second_map: HashMap<u32, f32>,
+}
+impl AvgResourceUsage {
+    fn init(system_resource: SystemResource) -> AvgResourceUsage {
+        let new_map: HashMap<u32, f32> = HashMap::new();
+        AvgResourceUsage {
+            system_resource,
+            resource_usage_per_second_map: new_map,
+        }
+    }
+    fn add_new_entry(&mut self, time_in_seconds: u32, avg_resource_usage: f32) {
+        self.resource_usage_per_second_map
+            .insert(time_in_seconds, avg_resource_usage);
+        println!(
+            "key {} seconds and {}% usage as value has been added",
+            time_in_seconds, avg_resource_usage
+        );
+    }
 }
 struct Pressure {
     some: HashMap<String, f64>,
@@ -133,9 +155,19 @@ fn main() {
             time_seconds,
         }) => match system_resource {
             SystemResource::Cpu => {
+                let mut cpu_avg_resource_usg = AvgResourceUsage::init(SystemResource::Cpu);
                 let time_delta = TimeDelta::seconds(*time_seconds);
+
+                let time_delta_one_second = TimeDelta::seconds(1);
+                let mut start_time_for_one_second = Utc::now().time();
+                let mut end_time_for_one_second = Utc::now().time();
+                let mut time_since_one_second_diff =
+                    end_time_for_one_second - start_time_for_one_second;
+
                 user_selected_time = *time_seconds;
                 let mut counter = 0;
+                // keeps track of how many times one second has passed
+                let mut time_in_seconds_counter: u32 = 0;
                 let mut hytale_total_cpu_usage: f32 = 0.0;
                 let mut total_system_cpu_usage: f32 = 0.0;
                 let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
@@ -143,6 +175,9 @@ fn main() {
                     sys.refresh_cpu_usage();
                     let mut current_system_cpu_usage: f32 = 0.0;
                     end_time = Utc::now().time();
+                    end_time_for_one_second = Utc::now().time();
+                    time_since_one_second_diff =
+                        end_time_for_one_second - start_time_for_one_second;
                     diff = end_time - start_time;
                     for cpu in sys.cpus() {
                         current_system_cpu_usage += cpu.cpu_usage();
@@ -154,6 +189,17 @@ fn main() {
 
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
                     counter += 1;
+                    // one second has passed
+                    if time_since_one_second_diff < time_delta_one_second {
+                        time_in_seconds_counter += 1;
+                        cpu_avg_resource_usg.add_new_entry(
+                            time_in_seconds_counter,
+                            ((hytale_total_cpu_usage / counter as f32)
+                                / total_available_cpu_percentage)
+                                * 100.0,
+                        );
+                        start_time_for_one_second = Utc::now().time();
+                    }
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
                 println!(
@@ -178,6 +224,7 @@ fn main() {
                     ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                         * 100.0
                 );
+                println!("created struct for csv writing {:?}", cpu_avg_resource_usg);
             }
             SystemResource::Mem => {
                 let time_delta = TimeDelta::seconds(*time_seconds);
