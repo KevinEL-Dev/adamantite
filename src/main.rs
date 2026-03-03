@@ -197,7 +197,7 @@ fn main() {
                     end_time = Utc::now().time();
                     end_time_for_one_second = Utc::now().time();
                     time_since_one_second_diff =
-                        end_time_for_one_second - start_time_for_one_second + (time_delta_200_ms) * counter;
+                        end_time_for_one_second - start_time_for_one_second; 
                     diff = end_time - start_time;
                     for cpu in sys.cpus() {
                         current_system_cpu_usage += cpu.cpu_usage();
@@ -208,9 +208,8 @@ fn main() {
                     let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
 
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
-                    counter += 1;
                     // one second has passed
-                    if time_since_one_second_diff > time_delta_one_second {
+                    if time_since_one_second_diff  + (time_delta_200_ms) * counter > time_delta_one_second {
                         time_in_seconds_counter += 1;
                         cpu_avg_resource_usg.add_new_entry(
                             time_in_seconds_counter,
@@ -221,6 +220,7 @@ fn main() {
                         // this reset start time to now
                         start_time_for_one_second = Utc::now().time();
                     }
+                    counter += 1;
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
                 println!(
