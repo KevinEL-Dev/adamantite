@@ -143,7 +143,7 @@ fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     // wtr.serialize(struct_avg)?;
 
     let size_of_map = struct_avg.resource_usage_per_second_map.len();
-    wtr.write_record(["Seconds","Resource Usage"])?;
+    wtr.write_record(["Seconds","Resource_Usage"])?;
     for i in 1..size_of_map+1 {
         let temp = i as u32;
         let resource_usage = struct_avg.resource_usage_per_second_map.get(&temp);
@@ -209,7 +209,7 @@ fn main() {
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
                     counter += 1;
                     // one second has passed
-                    if time_since_one_second_diff < time_delta_one_second {
+                    if time_since_one_second_diff > time_delta_one_second {
                         time_in_seconds_counter += 1;
                         cpu_avg_resource_usg.add_new_entry(
                             time_in_seconds_counter,
@@ -217,6 +217,7 @@ fn main() {
                                 / total_available_cpu_percentage)
                                 * 100.0,
                         );
+                        // this reset start time to now
                         start_time_for_one_second = Utc::now().time();
                     }
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
