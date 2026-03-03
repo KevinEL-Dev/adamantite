@@ -3,8 +3,12 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
+use std::io;
+use std::{error::Error};
+use std::process;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use serde::Serialize;
 use sysinfo::{Disks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
@@ -18,7 +22,7 @@ struct Cli {
     command: Option<Commands>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug,Serialize)]
 enum SystemResource {
     /// System resource cpu
     Cpu,
@@ -48,7 +52,8 @@ enum Commands {
         pressure_type: PressureType,
     },
 }
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "PascalCase")]
 struct AvgResourceUsage {
     system_resource: SystemResource,
     resource_usage_per_second_map: HashMap<u32, f32>,
@@ -132,6 +137,11 @@ impl Pressure {
             None => println!("failed to find the avg300_val"),
         }
     }
+}
+fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
+    let mut wtr = csv::Writer::from_writer(io::stdout());
+    wtr.serialize(struct_avg)?;
+    Ok(())
 }
 fn main() {
     // parges user input
@@ -225,6 +235,10 @@ fn main() {
                         * 100.0
                 );
                 println!("created struct for csv writing {:?}", cpu_avg_resource_usg);
+                if let Err(err) = run(cpu_avg_resource_usg){
+                    println!("{}", err);
+                    process::exit(1);
+                }
             }
             SystemResource::Mem => {
                 let time_delta = TimeDelta::seconds(*time_seconds);

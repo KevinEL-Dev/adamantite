@@ -13,3 +13,4 @@ sysinfo = "0.38.1"
 chrono = "0.4.43"
 num = "0.4.3"
 csv = "1.4.0"
+serde = {version = "1", features = ["derive"]}
