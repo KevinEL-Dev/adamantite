@@ -197,7 +197,7 @@ fn main() {
                     end_time = Utc::now().time();
                     end_time_for_one_second = Utc::now().time();
                     time_since_one_second_diff =
-                        end_time_for_one_second - start_time_for_one_second;
+                        end_time_for_one_second - start_time_for_one_second + time_delta_200_ms;
                     diff = end_time - start_time;
                     for cpu in sys.cpus() {
                         current_system_cpu_usage += cpu.cpu_usage();
@@ -210,7 +210,7 @@ fn main() {
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
                     counter += 1;
                     // one second has passed
-                    if time_since_one_second_diff + time_delta_200_ms > time_delta_one_second {
+                    if time_since_one_second_diff > time_delta_one_second {
                         time_in_seconds_counter += 1;
                         cpu_avg_resource_usg.add_new_entry(
                             time_in_seconds_counter,
