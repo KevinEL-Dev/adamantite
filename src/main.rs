@@ -209,7 +209,7 @@ fn main() {
 
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
                     // one second has passed
-                    if time_since_one_second_diff  + time_delta_200_ms > time_delta_one_second {
+                    if counter % 5 == 0 {
                         time_in_seconds_counter += 1;
                         cpu_avg_resource_usg.add_new_entry(
                             time_in_seconds_counter,
@@ -221,7 +221,7 @@ fn main() {
                         start_time_for_one_second = Utc::now().time();
                     }
                     counter += 1;
-                    time_delta_200_ms += TimeDelta::milliseconds(50);
+                    time_delta_200_ms += TimeDelta::milliseconds(25);
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
                 println!(
