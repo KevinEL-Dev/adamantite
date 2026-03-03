@@ -221,7 +221,6 @@ fn main() {
                     ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                         * num_of_cpus
                 );
-                println!("{:?}",sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 println!(
                     "For {} seconds your system on average used {:.2} cpus",
                     user_selected_time,
@@ -238,7 +237,6 @@ fn main() {
                     ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                         * 100.0
                 );
-                println!("created struct for csv writing {:?}", cpu_avg_resource_usg);
                 if let Err(err) = run(cpu_avg_resource_usg){
                     println!("{}", err);
                     process::exit(1);
