@@ -221,7 +221,7 @@ fn main() {
                         start_time_for_one_second = Utc::now().time();
                     }
                     counter += 1;
-                    time_delta_200_ms += TimeDelta::milliseconds(200);
+                    time_delta_200_ms += TimeDelta::milliseconds(100);
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
                 println!(
