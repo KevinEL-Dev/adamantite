@@ -119,8 +119,6 @@ fn main() {
     let mut sys = System::new();
     let mut diff = end_time - start_time;
     let mut user_selected_time = 1;
-    let mut time_delta = TimeDelta::seconds(user_selected_time);
-    let mut sys_resource = SystemResource::Cpu;
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
@@ -135,8 +133,7 @@ fn main() {
             time_seconds,
         }) => match system_resource {
             SystemResource::Cpu => {
-                time_delta = TimeDelta::seconds(*time_seconds);
-                sys_resource = *system_resource;
+                let time_delta = TimeDelta::seconds(*time_seconds);
                 user_selected_time = *time_seconds;
                 let mut counter = 0;
                 let mut hytale_total_cpu_usage: f32 = 0.0;
@@ -183,8 +180,7 @@ fn main() {
                 );
             }
             SystemResource::Mem => {
-                time_delta = TimeDelta::seconds(*time_seconds);
-                sys_resource = *system_resource;
+                let time_delta = TimeDelta::seconds(*time_seconds);
                 user_selected_time = *time_seconds;
                 let system_total_memory = sys.total_memory();
 
