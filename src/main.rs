@@ -70,10 +70,6 @@ impl AvgResourceUsage {
     fn add_new_entry(&mut self, time_in_seconds: u32, avg_resource_usage: f32) {
         self.resource_usage_per_second_map
             .insert(time_in_seconds, avg_resource_usage);
-        println!(
-            "key {} seconds and {}% usage as value has been added",
-            time_in_seconds, avg_resource_usage
-        );
     }
 }
 struct Pressure {
