@@ -178,13 +178,7 @@ fn main() {
                 let mut cpu_avg_resource_usg = AvgResourceUsage::init(SystemResource::Cpu);
                 let time_delta = TimeDelta::seconds(*time_seconds);
 
-                let time_delta_one_second = TimeDelta::seconds(1);
-                let mut time_delta_200_ms = TimeDelta::milliseconds(0);
                 let mut last_emit = Instant::now();
-                let mut start_time_for_one_second = Utc::now().time();
-                let mut end_time_for_one_second = Utc::now().time();
-                let mut time_since_one_second_diff =
-                    end_time_for_one_second - start_time_for_one_second;
 
                 user_selected_time = *time_seconds;
                 let mut counter = 0;
@@ -197,9 +191,6 @@ fn main() {
                     sys.refresh_cpu_usage();
                     let mut current_system_cpu_usage: f32 = 0.0;
                     end_time = Utc::now().time();
-                    end_time_for_one_second = Utc::now().time();
-                    time_since_one_second_diff =
-                        end_time_for_one_second - start_time_for_one_second; 
                     diff = end_time - start_time;
                     for cpu in sys.cpus() {
                         current_system_cpu_usage += cpu.cpu_usage();
@@ -219,12 +210,9 @@ fn main() {
                                 / total_available_cpu_percentage)
                                 * 100.0,
                         );
-                        // this reset start time to now
-                        start_time_for_one_second = Utc::now().time();
                         last_emit += Duration::from_secs(1);
                     }
                     counter += 1;
-                    time_delta_200_ms += TimeDelta::milliseconds(20);
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
                 println!(
