@@ -178,6 +178,7 @@ fn main() {
                 let time_delta = TimeDelta::seconds(*time_seconds);
 
                 let time_delta_one_second = TimeDelta::seconds(1);
+                let time_delta_200_ms = TimeDelta::milliseconds(200);
                 let mut start_time_for_one_second = Utc::now().time();
                 let mut end_time_for_one_second = Utc::now().time();
                 let mut time_since_one_second_diff =
@@ -209,7 +210,7 @@ fn main() {
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
                     counter += 1;
                     // one second has passed
-                    if time_since_one_second_diff > time_delta_one_second {
+                    if time_since_one_second_diff + time_delta_200_ms > time_delta_one_second {
                         time_in_seconds_counter += 1;
                         cpu_avg_resource_usg.add_new_entry(
                             time_in_seconds_counter,
