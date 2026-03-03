@@ -136,7 +136,12 @@ impl Pressure {
     }
 }
 fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
-    let mut wtr = csv::Writer::from_writer(io::stdout());
+    let mut file_path = "";
+    match struct_avg.system_resource {
+        SystemResource::Cpu => file_path = "cpu_usage.csv",
+        SystemResource::Mem => file_path = "mem_usage.csv"
+    }
+    let mut wtr = csv::Writer::from_path(file_path)?;
     // wtr.serialize(struct_avg)?;
 
     let size_of_map = struct_avg.resource_usage_per_second_map.len();
