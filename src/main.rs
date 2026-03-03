@@ -143,9 +143,14 @@ fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     // wtr.serialize(struct_avg)?;
 
     let size_of_map = struct_avg.resource_usage_per_second_map.len();
+    wtr.write_record(["Seconds","Resource Usage"])?;
     for i in 1..size_of_map+1 {
         println!("{}",i);
+        let temp = i as u32;
+        let resource_usage = struct_avg.resource_usage_per_second_map.get(&temp);
+        wtr.serialize((i,resource_usage))?;
     }
+    wtr.flush()?;
     Ok(())
 }
 fn main() {
