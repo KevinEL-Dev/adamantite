@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io;
+use std::time::{Duration,Instant};
 use std::{error::Error};
 use std::process;
 use std::path::Path;
@@ -179,6 +180,7 @@ fn main() {
 
                 let time_delta_one_second = TimeDelta::seconds(1);
                 let mut time_delta_200_ms = TimeDelta::milliseconds(0);
+                let mut last_emit = Instant::now();
                 let mut start_time_for_one_second = Utc::now().time();
                 let mut end_time_for_one_second = Utc::now().time();
                 let mut time_since_one_second_diff =
@@ -209,7 +211,7 @@ fn main() {
 
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
                     // one second has passed
-                    if counter % 5 == 0 {
+                    if last_emit.elapsed() >= Duration::from_secs(1){
                         time_in_seconds_counter += 1;
                         cpu_avg_resource_usg.add_new_entry(
                             time_in_seconds_counter,
@@ -219,9 +221,10 @@ fn main() {
                         );
                         // this reset start time to now
                         start_time_for_one_second = Utc::now().time();
+                        last_emit += Duration::from_secs(1);
                     }
                     counter += 1;
-                    time_delta_200_ms += TimeDelta::milliseconds(25);
+                    time_delta_200_ms += TimeDelta::milliseconds(20);
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
                 println!(
