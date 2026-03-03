@@ -197,7 +197,7 @@ fn main() {
                     end_time = Utc::now().time();
                     end_time_for_one_second = Utc::now().time();
                     time_since_one_second_diff =
-                        end_time_for_one_second - start_time_for_one_second + time_delta_200_ms;
+                        end_time_for_one_second - start_time_for_one_second + (time_delta_200_ms) * counter;
                     diff = end_time - start_time;
                     for cpu in sys.cpus() {
                         current_system_cpu_usage += cpu.cpu_usage();
