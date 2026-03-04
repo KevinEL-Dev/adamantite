@@ -255,6 +255,7 @@ fn main() {
                         println!("{}", err);
                         process::exit(1);
                     }
+                    println!("you wanted a csv so here is one");
                 }
             }
             SystemResource::Mem => {
