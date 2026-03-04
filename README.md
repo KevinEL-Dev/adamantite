@@ -50,6 +50,13 @@ Options:
   -t, --time-seconds <TIME_SECONDS>
           [default: 1]
 
+  -o, --output <OUTPUT>
+          Possible values:
+          - csv:  Output type of CSV
+          - none: Default output type is None
+
+          [default: none]
+
   -h, --help
           Print help (see a summary with '-h')
 ```
@@ -83,6 +90,15 @@ Output would look like this
 This command will provide the average memory usage in gigabytes over x seconds. It will also provide the average memory usage in gigabytes as well for the entire system over x seconds.
 
 For the rest of the output, adamantite will provide average memory usage as a percentage for hytale, your entire system including hytale, and your entire system excluding hytale as well.
+
+Example command:
+```
+$ cargo run -- track mem -t 10 -o csv
+```
+This command will write to a file with either the name mem_usage.csv or cpu_usage.csv based on the resource that is currently being tracked.
+
+An example of the file contents are this
+![Project Screenshot](./assets/mem_t_10_o_csv.png)
 ```
 cargo run -- pressure --help
 ```
