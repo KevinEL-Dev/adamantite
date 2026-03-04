@@ -154,7 +154,10 @@ fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     // wtr.serialize(struct_avg)?;
 
     let size_of_map = struct_avg.resource_usage_per_second_map.len();
-    wtr.write_record(["Seconds","Resource_Usage"])?;
+    match struct_avg.system_resource {
+        SystemResource::Cpu => wtr.write_record(["Seconds","Avg_Cpu_Usage_%"])?,
+        SystemResource::Mem => wtr.write_record(["Seconds","Avg_Mem_Usage_In_GB"])?    
+    }
     for i in 1..size_of_map+1 {
         let temp = i as u32;
         let resource_usage = struct_avg.resource_usage_per_second_map.get(&temp);
