@@ -3,7 +3,6 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io;
 use std::time::{Duration,Instant};
 use std::{error::Error};
 use std::process;
@@ -252,13 +251,11 @@ fn main() {
                         * 100.0
                 );
                 if *output == OutputType::None {
-                    println!("no output type specified so we wont give you csv");
                 }else{
                     if let Err(err) = run(cpu_avg_resource_usg){
                         println!("{}", err);
                         process::exit(1);
                     }
-                    println!("you wanted a csv so here is one");
                 }
             }
             SystemResource::Mem => {
@@ -336,13 +333,11 @@ fn main() {
                     average_system_mem_usage - average_hytale_mem_usage
                 );
                 if *output == OutputType::None {
-                    println!("no output type specified so we wont give you csv");
                 }else{
                     if let Err(err) = run(mem_avg_resource_usg){
                         println!("{}", err);
                         process::exit(1);
                     }
-                    println!("you wanted a csv so here is one");
                 }
             }
         },
