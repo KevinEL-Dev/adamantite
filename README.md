@@ -98,6 +98,7 @@ $ cargo run -- track mem -t 10 -o csv
 This command will write to a file with either the name mem_usage.csv or cpu_usage.csv based on the resource that is currently being tracked.
 
 An example of the file contents are this
+
 ![Project Screenshot](./assets/mem_t_10_o_csv.png)
 ```
 cargo run -- pressure --help
