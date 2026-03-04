@@ -37,6 +37,13 @@ enum PressureType {
     /// Pressure type Mem
     Mem,
 }
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum OutputType {
+    /// Output type of CSV
+    Csv,
+    /// Default output type is None
+    None
+}
 #[derive(Subcommand)]
 enum Commands {
     /// Tracks a system resource
@@ -45,6 +52,8 @@ enum Commands {
         system_resource: SystemResource,
         #[arg(short, long, default_value_t = 1)]
         time_seconds: i64,
+        #[arg(short, long,value_enum,default_value_t = OutputType::None)]
+        output: OutputType
     },
     /// Shows how often system work is stalled due to resource contention
     Pressure {
@@ -174,6 +183,7 @@ fn main() {
         Some(Commands::Track {
             system_resource,
             time_seconds,
+            output,
         }) => match system_resource {
             SystemResource::Cpu => {
                 let mut cpu_avg_resource_usg = AvgResourceUsage::init(SystemResource::Cpu);
@@ -238,9 +248,13 @@ fn main() {
                     ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                         * 100.0
                 );
-                if let Err(err) = run(cpu_avg_resource_usg){
-                    println!("{}", err);
-                    process::exit(1);
+                if *output == OutputType::None {
+                    println!("no output type specified so we wont give you csv");
+                }else{
+                    if let Err(err) = run(cpu_avg_resource_usg){
+                        println!("{}", err);
+                        process::exit(1);
+                    }
                 }
             }
             SystemResource::Mem => {
