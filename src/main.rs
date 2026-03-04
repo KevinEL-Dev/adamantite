@@ -259,9 +259,13 @@ fn main() {
                 }
             }
             SystemResource::Mem => {
+                let mut mem_avg_resource_usg = AvgResourceUsage::init(SystemResource::Mem);
                 let time_delta = TimeDelta::seconds(*time_seconds);
                 user_selected_time = *time_seconds;
                 let system_total_memory = sys.total_memory();
+
+                let mut last_emit = Instant::now();
+                let mut time_in_seconds_counter: u32 = 0;
 
                 let mut total_mem_usage_in_bytes = 0;
                 let mut total_hytale_mem_usage_in_bytes = 0;
@@ -277,6 +281,18 @@ fn main() {
                     let curr_hytale_mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
                     total_mem_usage_in_bytes += curr_system_mem_in_bytes;
                     total_hytale_mem_usage_in_bytes += curr_hytale_mem_in_bytes;
+                    if last_emit.elapsed() >= Duration::from_secs(1){
+                        time_in_seconds_counter += 1;
+                        let total_hytale_mem_in_gigabytes =
+                            return_mem_in_gigabytes(total_hytale_mem_usage_in_bytes as f64);
+                        let average_hytale_mem_usage_gb = total_hytale_mem_in_gigabytes / counter as f64;
+                        mem_avg_resource_usg.add_new_entry(
+                            time_in_seconds_counter,
+                            average_hytale_mem_usage_gb as f32,
+
+                        );
+                        last_emit += Duration::from_secs(1);
+                    }
                     counter += 1;
                 }
                 let total_mem_in_gigabytes =
@@ -316,6 +332,15 @@ fn main() {
                     user_selected_time,
                     average_system_mem_usage - average_hytale_mem_usage
                 );
+                if *output == OutputType::None {
+                    println!("no output type specified so we wont give you csv");
+                }else{
+                    if let Err(err) = run(mem_avg_resource_usg){
+                        println!("{}", err);
+                        process::exit(1);
+                    }
+                    println!("you wanted a csv so here is one");
+                }
             }
         },
         Some(Commands::Pressure { pressure_type }) => match pressure_type {
