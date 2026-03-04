@@ -1,5 +1,5 @@
 use chrono::{TimeDelta, prelude::*};
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum,Args};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -60,6 +60,18 @@ enum Commands {
         #[arg(value_enum)]
         pressure_type: PressureType,
     },
+    /// Shows Hytale vs System metrics
+    Live {
+        /// Interval update time in ms
+        #[arg(short, long, default_value_t = 500)]
+        interval_ms: i64,
+    },
+}
+#[derive(Args)]
+struct LiveArgs {
+        /// Interval to update at in ms
+        #[arg(short, long)]
+        interval_ms: i64,
 }
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -349,6 +361,9 @@ fn main() {
                 show_system_pressure(PressureType::Mem);
             }
         },
+        Some(Commands::Live {interval_ms}) => {
+            println!("interval time in ms is {}",interval_ms);
+        }
         None => {}
     }
 }
