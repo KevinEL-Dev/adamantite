@@ -3,8 +3,12 @@ use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
+use std::time::{Duration,Instant};
+use std::{error::Error};
+use std::process;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use serde::Serialize;
 use sysinfo::{Disks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
@@ -18,7 +22,7 @@ struct Cli {
     command: Option<Commands>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug,Serialize)]
 enum SystemResource {
     /// System resource cpu
     Cpu,
@@ -32,6 +36,13 @@ enum PressureType {
     /// Pressure type Mem
     Mem,
 }
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum OutputType {
+    /// Output type of CSV
+    Csv,
+    /// Default output type is None
+    None
+}
 #[derive(Subcommand)]
 enum Commands {
     /// Tracks a system resource
@@ -40,6 +51,8 @@ enum Commands {
         system_resource: SystemResource,
         #[arg(short, long, default_value_t = 1)]
         time_seconds: i64,
+        #[arg(short, long,value_enum,default_value_t = OutputType::None)]
+        output: OutputType
     },
     /// Shows how often system work is stalled due to resource contention
     Pressure {
@@ -47,6 +60,25 @@ enum Commands {
         #[arg(value_enum)]
         pressure_type: PressureType,
     },
+}
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "PascalCase")]
+struct AvgResourceUsage {
+    system_resource: SystemResource,
+    resource_usage_per_second_map: HashMap<u32, f32>,
+}
+impl AvgResourceUsage {
+    fn init(system_resource: SystemResource) -> AvgResourceUsage {
+        let new_map: HashMap<u32, f32> = HashMap::new();
+        AvgResourceUsage {
+            system_resource,
+            resource_usage_per_second_map: new_map,
+        }
+    }
+    fn add_new_entry(&mut self, time_in_seconds: u32, avg_resource_usage: f32) {
+        self.resource_usage_per_second_map
+            .insert(time_in_seconds, avg_resource_usage);
+    }
 }
 struct Pressure {
     some: HashMap<String, f64>,
@@ -111,6 +143,28 @@ impl Pressure {
         }
     }
 }
+fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
+    let mut file_path = "";
+    match struct_avg.system_resource {
+        SystemResource::Cpu => file_path = "cpu_usage.csv",
+        SystemResource::Mem => file_path = "mem_usage.csv"
+    }
+    let mut wtr = csv::Writer::from_path(file_path)?;
+    // wtr.serialize(struct_avg)?;
+
+    let size_of_map = struct_avg.resource_usage_per_second_map.len();
+    match struct_avg.system_resource {
+        SystemResource::Cpu => wtr.write_record(["Seconds","Avg_Cpu_Usage_%"])?,
+        SystemResource::Mem => wtr.write_record(["Seconds","Avg_Mem_Usage_In_GB"])?    
+    }
+    for i in 1..size_of_map+1 {
+        let temp = i as u32;
+        let resource_usage = struct_avg.resource_usage_per_second_map.get(&temp);
+        wtr.serialize((i,resource_usage))?;
+    }
+    wtr.flush()?;
+    Ok(())
+}
 fn main() {
     // parges user input
     let args = Cli::parse();
@@ -131,11 +185,18 @@ fn main() {
         Some(Commands::Track {
             system_resource,
             time_seconds,
+            output,
         }) => match system_resource {
             SystemResource::Cpu => {
+                let mut cpu_avg_resource_usg = AvgResourceUsage::init(SystemResource::Cpu);
                 let time_delta = TimeDelta::seconds(*time_seconds);
+
+                let mut last_emit = Instant::now();
+
                 user_selected_time = *time_seconds;
                 let mut counter = 0;
+                // keeps track of how many times one second has passed
+                let mut time_in_seconds_counter: u32 = 0;
                 let mut hytale_total_cpu_usage: f32 = 0.0;
                 let mut total_system_cpu_usage: f32 = 0.0;
                 let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
@@ -153,6 +214,17 @@ fn main() {
                     let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
 
                     hytale_total_cpu_usage += hytale_curr_cpu_usage;
+                    // one second has passed
+                    if last_emit.elapsed() >= Duration::from_secs(1){
+                        time_in_seconds_counter += 1;
+                        cpu_avg_resource_usg.add_new_entry(
+                            time_in_seconds_counter,
+                            ((hytale_total_cpu_usage / counter as f32)
+                                / total_available_cpu_percentage)
+                                * 100.0,
+                        );
+                        last_emit += Duration::from_secs(1);
+                    }
                     counter += 1;
                     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
                 }
@@ -178,11 +250,22 @@ fn main() {
                     ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage)
                         * 100.0
                 );
+                if *output == OutputType::None {
+                }else{
+                    if let Err(err) = run(cpu_avg_resource_usg){
+                        println!("{}", err);
+                        process::exit(1);
+                    }
+                }
             }
             SystemResource::Mem => {
+                let mut mem_avg_resource_usg = AvgResourceUsage::init(SystemResource::Mem);
                 let time_delta = TimeDelta::seconds(*time_seconds);
                 user_selected_time = *time_seconds;
                 let system_total_memory = sys.total_memory();
+
+                let mut last_emit = Instant::now();
+                let mut time_in_seconds_counter: u32 = 0;
 
                 let mut total_mem_usage_in_bytes = 0;
                 let mut total_hytale_mem_usage_in_bytes = 0;
@@ -198,6 +281,18 @@ fn main() {
                     let curr_hytale_mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
                     total_mem_usage_in_bytes += curr_system_mem_in_bytes;
                     total_hytale_mem_usage_in_bytes += curr_hytale_mem_in_bytes;
+                    if last_emit.elapsed() >= Duration::from_secs(1){
+                        time_in_seconds_counter += 1;
+                        let total_hytale_mem_in_gigabytes =
+                            return_mem_in_gigabytes(total_hytale_mem_usage_in_bytes as f64);
+                        let average_hytale_mem_usage_gb = total_hytale_mem_in_gigabytes / counter as f64;
+                        mem_avg_resource_usg.add_new_entry(
+                            time_in_seconds_counter,
+                            average_hytale_mem_usage_gb as f32,
+
+                        );
+                        last_emit += Duration::from_secs(1);
+                    }
                     counter += 1;
                 }
                 let total_mem_in_gigabytes =
@@ -237,6 +332,13 @@ fn main() {
                     user_selected_time,
                     average_system_mem_usage - average_hytale_mem_usage
                 );
+                if *output == OutputType::None {
+                }else{
+                    if let Err(err) = run(mem_avg_resource_usg){
+                        println!("{}", err);
+                        process::exit(1);
+                    }
+                }
             }
         },
         Some(Commands::Pressure { pressure_type }) => match pressure_type {
