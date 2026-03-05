@@ -103,11 +103,9 @@ pub struct App {
 }
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal,interval_ms: i64,sys: &mut System,hytale_pid: u32) -> io::Result<()>{
-
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
         while !self.exit {
-            terminal.draw(|frame| self.draw(frame))?;
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
                 // retrieve current cpu usage, hytale cpu usage
 
@@ -124,7 +122,10 @@ impl App {
                 self.update_hytale_cpu_usage((hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
-            self.handle_events()?;
+            terminal.draw(|frame| self.draw(frame))?;
+            if event::poll(Duration::from_millis(16))? {
+                self.handle_events()?;
+            }
         }
         Ok(())
     }
@@ -170,6 +171,7 @@ impl Widget for &App {
         let counter_text = Text::from(vec![Line::from(vec![
             "System CPU Usage: ".into(),
             self.system_cpu_usage.to_string().yellow(),
+            " ".into(),
             "Hytale CPU Usage: ".into(),
             self.hytale_cpu_usage.to_string().yellow(),
         ])]);
