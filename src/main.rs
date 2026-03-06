@@ -187,10 +187,7 @@ impl App {
                 Constraint::Percentage(50),
             ])
             .split(frame.area());
-        frame.render_widget(
-            Paragraph::new("Top")
-                .block(Block::new().borders(Borders::ALL)),
-            layout[0]);
+        frame.render_widget(self,layout[0]);
         frame.render_widget(
             BarChart::new([Bar::with_label("System cpu usage", self.system_cpu_usage as u64), Bar::with_label("Hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("System mem usage", self.system_mem_usage as u64),Bar::with_label("Hytale mem usage", self.system_mem_usage as u64)])
             .max(100)
@@ -201,7 +198,6 @@ impl App {
             .label_style(Style::new().white())
             .bar_gap(1),
             layout[1]);
-        //frame.render_widget(self,frame.area());
     }
     fn draw_test(&self, frame: &mut Frame) {
         //frame.render_widget(self,frame.area());
