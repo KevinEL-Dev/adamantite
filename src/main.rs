@@ -72,7 +72,7 @@ enum Commands {
         #[arg(value_enum)]
         pressure_type: PressureType,
     },
-    /// Shows Hytale vs System metrics
+    /// Shows Live Hytale vs System metrics
     Live {
         /// Interval update time in ms
         #[arg(short, long, default_value_t = 500)]
