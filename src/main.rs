@@ -190,21 +190,15 @@ impl App {
             ])
             .split(frame.area());
         frame.render_widget(self,layout[0]);
-        // frame.render_widget(
-        //     BarChart::new([Bar::with_label("System cpu usage", self.system_cpu_usage as u64), Bar::with_label("Hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("System mem usage", self.system_mem_usage as u64),Bar::with_label("Hytale mem usage", self.hytale_mem_usage)])
-        //     .max(100)
-        //     .block(Block::bordered().title("Barchat"))
-        //     .bar_width(25)
-        //     .bar_style(Style::new().yellow())
-        //     .value_style(Style::new().red().bold())
-        //     .label_style(Style::new().white())
-        //     .bar_gap(1),
-        //     layout[1]);
         frame.render_widget(
-            Gauge::default()
-            .block(Block::bordered().title("System cpu usage"))
-            .gauge_style(Style::new().white().on_black().italic())
-            .ratio((self.system_cpu_usage / 100.0).into()),
+            BarChart::new([Bar::with_label("system cpu usage", self.system_cpu_usage as u64), Bar::with_label("hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("system mem usage", self.system_mem_usage as u64),Bar::with_label("hytale mem usage", self.hytale_mem_usage as u64)])
+            .max(100)
+            .block(Block::bordered().title("barchat"))
+            .bar_width(25)
+            .bar_style(Style::new().yellow())
+            .value_style(Style::new().red().bold())
+            .label_style(Style::new().white())
+            .bar_gap(1),
             layout[1]);
     }
     fn draw_test(&self, frame: &mut Frame) {
