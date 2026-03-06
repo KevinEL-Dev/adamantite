@@ -60,6 +60,19 @@ Options:
   -h, --help
           Print help (see a summary with '-h')
 ```
+```
+cargo run -- live --help
+```
+```
+Shows Live Hytale vs System metrics
+
+Usage: adamantite live [OPTIONS]
+
+Options:
+  -i, --interval-ms <INTERVAL_MS>  Interval update time in ms [default: 500]
+  -h, --help                       Print help
+[kev@shadow adamantite]$
+```
 There are two system resources that you can monitor for x seconds:
 - cpu
 - mem
@@ -117,6 +130,16 @@ Options:
   -h, --help  Print help (see more with '--help')
 ```
 You can view the past pressure for two types: io and mem. Memory pressure is time stalled because memory could not be allocated or reclaimed fast enough. I/O pressure is time spent waiting on disk or storage operations to complete.
+
+Example command :
+```
+$ cargo run -- live
+```
+
+This command will bring up a TUI where you can see live updates of your system memory and cpu usage as well as hytale's memory and cpu usage.
+
+Output:
+
 
 ### Why is pressure important
 Pressure directly reflects time the server could not advance its game loop, making it a strong indicator of tick instability and perceived lag.
