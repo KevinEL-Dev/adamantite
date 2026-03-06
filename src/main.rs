@@ -192,7 +192,9 @@ impl App {
             layout[0]);
         frame.render_widget(
             Paragraph::new("Bottom")
-                .block(Block::new().borders(Borders::ALL)),
+                .block(Block::new().borders(Borders::ALL),
+                BarChart::new([Bar::with_label("A", 10), Bar::with_label("B", 20)]),
+            ),
             layout[1]);
         //frame.render_widget(self,frame.area());
     }
