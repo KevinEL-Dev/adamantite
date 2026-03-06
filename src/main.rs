@@ -24,6 +24,7 @@ use ratatui::{
 };
 use ratatui::prelude::*;
 use ratatui::widgets::Borders;
+use ratatui::widgets::{Bar, BarChart};
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
@@ -191,10 +192,7 @@ impl App {
                 .block(Block::new().borders(Borders::ALL)),
             layout[0]);
         frame.render_widget(
-            Paragraph::new("Bottom")
-                .block(Block::new().borders(Borders::ALL),
-                BarChart::new([Bar::with_label("A", 10), Bar::with_label("B", 20)]),
-            ),
+            BarChart::new([Bar::with_label("A", 10), Bar::with_label("B", 20)]),
             layout[1]);
         //frame.render_widget(self,frame.area());
     }
