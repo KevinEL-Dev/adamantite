@@ -179,9 +179,6 @@ impl App {
         Ok(())
     }
     fn draw(&self, frame: &mut Frame) {
-        frame.render_widget(self,frame.area());
-    }
-    fn draw_test(&self, frame: &mut Frame) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -197,6 +194,9 @@ impl App {
             Paragraph::new("Bottom")
                 .block(Block::new().borders(Borders::ALL)),
             layout[1]);
+        //frame.render_widget(self,frame.area());
+    }
+    fn draw_test(&self, frame: &mut Frame) {
         //frame.render_widget(self,frame.area());
     }
     fn handle_events(&mut self) -> io::Result<()>{
