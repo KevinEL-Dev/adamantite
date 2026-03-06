@@ -196,6 +196,9 @@ impl App {
             .max(100)
             .block(Block::bordered().title("Barchat"))
             .bar_width(3)
+            .bar_style(Style::new().yellow().on_red())
+            .value_style(Style::new().red().bold())
+            .label_style(Style::new().white())
             .bar_gap(1),
             layout[1]);
         //frame.render_widget(self,frame.area());
