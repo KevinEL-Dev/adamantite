@@ -195,7 +195,7 @@ impl App {
             .max(100)
             .block(Block::bordered().title("barchat"))
             .bar_width(25)
-            .bar_style(Style::new().yellow())
+            .bar_style(Style::new().green())
             .value_style(Style::new().red().bold())
             .label_style(Style::new().white())
             .bar_gap(1),
