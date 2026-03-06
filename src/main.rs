@@ -192,7 +192,8 @@ impl App {
                 .block(Block::new().borders(Borders::ALL)),
             layout[0]);
         frame.render_widget(
-            BarChart::new([Bar::with_label("A", self.system_cpu_usage as u64), Bar::with_label("B", self.hytale_cpu_usage as u64)]),
+            BarChart::new([Bar::with_label("A", self.system_cpu_usage as u64), Bar::with_label("B", self.hytale_cpu_usage as u64)])
+            .max(100),
             layout[1]);
         //frame.render_widget(self,frame.area());
     }
