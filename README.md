@@ -138,8 +138,8 @@ $ cargo run -- live
 
 This command will bring up a TUI where you can see live updates of your system memory and cpu usage as well as hytale's memory and cpu usage.
 
-Output:
-
+## Demo
+[![asciicast](https://asciinema.org/a/dnez5bkkAUUySw6R.svg)](https://asciinema.org/a/dnez5bkkAUUySw6R)
 
 ### Why is pressure important
 Pressure directly reflects time the server could not advance its game loop, making it a strong indicator of tick instability and perceived lag.
