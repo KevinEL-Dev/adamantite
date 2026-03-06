@@ -1,5 +1,5 @@
 use chrono::{TimeDelta, prelude::*};
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum,Args};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -10,6 +10,18 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use serde::Serialize;
 use sysinfo::{Disks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
+use std::io;
+
+use crossterm::event::{self, Event, KeyCode, KeyEvent,KeyEventKind};
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    style::Stylize,
+    symbols::border,
+    text::{Line, Text},
+    widgets::{Block, Paragraph,Widget},
+    DefaultTerminal, Frame,
+};
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
@@ -60,6 +72,143 @@ enum Commands {
         #[arg(value_enum)]
         pressure_type: PressureType,
     },
+    /// Shows Hytale vs System metrics
+    Live {
+        /// Interval update time in ms
+        #[arg(short, long, default_value_t = 500)]
+        interval_ms: u64,
+    },
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use ratatui::style::Style;
+
+    #[test]
+    fn handle_key_event() {
+        let mut app = App::default();
+        app.handle_key_event(KeyCode::Char('q').into());
+        assert!(app.exit);
+    }
+}
+#[derive(Debug,Default)]
+pub struct App {
+    system_cpu_usage: f32,
+    hytale_cpu_usage: f32,
+    system_mem_usage: f64,
+    hytale_mem_usage: f64,
+    exit: bool,
+}
+impl App {
+    pub fn run(&mut self, terminal: &mut DefaultTerminal,interval_ms: i64,sys: &mut System,hytale_pid: u32) -> io::Result<()>{
+        let num_of_cpus = sys.cpus().len() as f32;
+        let mut last_emit = Instant::now();
+        while !self.exit {
+            if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
+                sys.refresh_memory_specifics(
+                    sysinfo::MemoryRefreshKind::everything().with_ram(),
+                );
+
+                sys.refresh_cpu_usage();
+                let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
+                let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
+                let curr_system_mem_in_bytes = sys.used_memory();
+                let curr_hytale_mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
+                let curr_hytale_mem_in_gigabytes =
+                    return_mem_in_gigabytes(curr_hytale_mem_in_bytes as f64);
+                let curr_system_mem_in_gigabytes =
+                    return_mem_in_gigabytes(curr_system_mem_in_bytes as f64);
+
+                let mut current_system_cpu_usage: f32 = 0.0;
+                for cpu in sys.cpus() {
+                    current_system_cpu_usage += cpu.cpu_usage();
+                }
+                let current_system_cpu_usage = (current_system_cpu_usage / total_available_cpu_percentage) * 100.0;
+                self.update_sys_cpu_usage(current_system_cpu_usage);
+                self.update_hytale_cpu_usage((hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0);
+                self.update_sys_mem_usage(curr_system_mem_in_gigabytes);
+                self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
+                last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
+            }
+            terminal.draw(|frame| self.draw(frame))?;
+            if event::poll(Duration::from_millis(16))? {
+                self.handle_events()?;
+            }
+        }
+        Ok(())
+    }
+    fn draw(&self, frame: &mut Frame) {
+        frame.render_widget(self,frame.area());
+    }
+    fn handle_events(&mut self) -> io::Result<()>{
+        match event::read()? {
+            Event::Key(key_event) if key_event.kind == KeyEventKind::Press =>{
+                self.handle_key_event(key_event)
+            }
+            _ => {}
+        };
+        Ok(())
+    }
+    fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char('q') => self.exit(),
+            _ => {}
+        }
+    }
+    fn exit(&mut self) {
+        self.exit = true;
+    }
+    fn update_sys_cpu_usage(&mut self,curr_sys_usage: f32){
+        self.system_cpu_usage = curr_sys_usage;
+    }
+    fn update_hytale_cpu_usage(&mut self,curr_hytale_cpu_usage: f32){
+        self.hytale_cpu_usage = curr_hytale_cpu_usage;
+    }
+    fn update_sys_mem_usage(&mut self,curr_mem_usage: f64){
+        self.system_mem_usage = curr_mem_usage;
+    }
+    fn update_hytale_mem_usage(&mut self,curr_hytale_mem_usage: f64){
+        self.hytale_mem_usage = curr_hytale_mem_usage;
+    }
+}
+impl Widget for &App {
+    fn render(self, area: Rect, buf: &mut Buffer){
+        let title = Line::from("adamantite live".bold());
+        let instructions = Line::from(vec![
+            " Quit ".into(),
+            "<Q> ".blue().bold(),
+        ]);
+        let block = Block::bordered()
+            .title(title.centered())
+            .title_bottom(instructions.centered())
+            .border_set(border::THICK);
+        let counter_text = Text::from(vec![Line::from(vec![
+            "System CPU Usage: ".into(),
+            self.system_cpu_usage.to_string().yellow(),
+            "%".into(),
+            " ".into(),
+            "Hytale CPU Usage: ".into(),
+            self.hytale_cpu_usage.to_string().yellow(),
+            "%".into(),
+            " ".into(),
+            "System Mem Usage: ".into(),
+            self.system_mem_usage.to_string().yellow(),
+            " GB".into(),
+            " ".into(),
+            "Hytale Mem Usage: ".into(),
+            self.hytale_mem_usage.to_string().yellow(),
+            " GB".into(),
+        ])
+        ]);
+
+        Paragraph::new(counter_text)
+            .centered()
+            .block(block)
+            .render(area,buf);
+    }
+
 }
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "PascalCase")]
@@ -164,6 +313,9 @@ fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     }
     wtr.flush()?;
     Ok(())
+}
+fn run_live(interval_ms: i64, sys: &mut System,hytale_pid: u32) -> io::Result<()> {
+    ratatui::run(|terminal| App::default().run(terminal,interval_ms,sys,hytale_pid))
 }
 fn main() {
     // parges user input
@@ -349,7 +501,13 @@ fn main() {
                 show_system_pressure(PressureType::Mem);
             }
         },
-        None => {}
+        Some(Commands::Live {interval_ms}) => {
+            if let Err(err) = run_live(*interval_ms as i64,&mut sys,hytale_pid){
+                println!("{}", err);
+                process::exit(1);
+            }
+        },
+             None => {todo!()}
     }
 }
 fn find_pid_of_hytale() -> u32 {
