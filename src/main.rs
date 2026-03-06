@@ -85,7 +85,6 @@ mod tests {
 
     use super::*;
     use ratatui::style::Style;
-    // -- snip --
 
     #[test]
     fn handle_key_event() {
@@ -96,7 +95,6 @@ mod tests {
 }
 #[derive(Debug,Default)]
 pub struct App {
-    counter: u8,
     system_cpu_usage: f32,
     hytale_cpu_usage: f32,
     system_mem_usage: f64,
@@ -109,8 +107,11 @@ impl App {
         let mut last_emit = Instant::now();
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
-                // retrieve current cpu usage, hytale cpu usage
+                sys.refresh_memory_specifics(
+                    sysinfo::MemoryRefreshKind::everything().with_ram(),
+                );
 
+                sys.refresh_cpu_usage();
                 let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
                 let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
                 let curr_system_mem_in_bytes = sys.used_memory();
@@ -120,10 +121,6 @@ impl App {
                 let curr_system_mem_in_gigabytes =
                     return_mem_in_gigabytes(curr_system_mem_in_bytes as f64);
 
-                sys.refresh_memory_specifics(
-                    sysinfo::MemoryRefreshKind::everything().with_ram(),
-                );
-                sys.refresh_cpu_usage();
                 let mut current_system_cpu_usage: f32 = 0.0;
                 for cpu in sys.cpus() {
                     current_system_cpu_usage += cpu.cpu_usage();
@@ -190,11 +187,11 @@ impl Widget for &App {
         let counter_text = Text::from(vec![Line::from(vec![
             "System CPU Usage: ".into(),
             self.system_cpu_usage.to_string().yellow(),
-            " %".into(),
+            "%".into(),
             " ".into(),
             "Hytale CPU Usage: ".into(),
             self.hytale_cpu_usage.to_string().yellow(),
-            " %".into(),
+            "%".into(),
             " ".into(),
             "System Mem Usage: ".into(),
             self.system_mem_usage.to_string().yellow(),
@@ -509,29 +506,6 @@ fn main() {
                 println!("{}", err);
                 process::exit(1);
             }
-        //     println!("interval time in ms is {}",interval_ms);
-        //         let mut cpu_avg_resource_usg = AvgResourceUsage::init(SystemResource::Cpu);
-        //         let mut counter = 0;
-        //         // keeps track of how many times one second has passed
-        //         let mut hytale_total_cpu_usage: f32 = 0.0;
-        //         let mut total_system_cpu_usage: f32 = 0.0;
-        //         let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
-        //         while true {
-        //             sys.refresh_cpu_usage();
-        //             let mut current_system_cpu_usage: f32 = 0.0;
-        //             for cpu in sys.cpus() {
-        //                 current_system_cpu_usage += cpu.cpu_usage();
-        //             }
-        //             total_system_cpu_usage +=
-        //                 current_system_cpu_usage / total_available_cpu_percentage;
-        //
-        //             let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
-        //
-        //             hytale_total_cpu_usage += hytale_curr_cpu_usage;
-        //             // one second has passed
-        //             counter += 1;
-        //             std::thread::sleep(Duration::from_millis(*interval_ms));
-        //         }
         },
              None => {todo!()}
     }
