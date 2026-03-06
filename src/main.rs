@@ -190,9 +190,11 @@ impl Widget for &App {
         let counter_text = Text::from(vec![Line::from(vec![
             "System CPU Usage: ".into(),
             self.system_cpu_usage.to_string().yellow(),
+            " %".into(),
             " ".into(),
             "Hytale CPU Usage: ".into(),
             self.hytale_cpu_usage.to_string().yellow(),
+            " %".into(),
             " ".into(),
             "System Mem Usage: ".into(),
             self.system_mem_usage.to_string().yellow(),
