@@ -25,6 +25,8 @@ use ratatui::{
 use ratatui::prelude::*;
 use ratatui::widgets::Borders;
 use ratatui::widgets::{Bar, BarChart};
+use ratatui::style::{Style};
+use ratatui::widgets::{Gauge};
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
@@ -188,15 +190,21 @@ impl App {
             ])
             .split(frame.area());
         frame.render_widget(self,layout[0]);
+        // frame.render_widget(
+        //     BarChart::new([Bar::with_label("System cpu usage", self.system_cpu_usage as u64), Bar::with_label("Hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("System mem usage", self.system_mem_usage as u64),Bar::with_label("Hytale mem usage", self.hytale_mem_usage)])
+        //     .max(100)
+        //     .block(Block::bordered().title("Barchat"))
+        //     .bar_width(25)
+        //     .bar_style(Style::new().yellow())
+        //     .value_style(Style::new().red().bold())
+        //     .label_style(Style::new().white())
+        //     .bar_gap(1),
+        //     layout[1]);
         frame.render_widget(
-            BarChart::new([Bar::with_label("System cpu usage", self.system_cpu_usage as u64), Bar::with_label("Hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("System mem usage", self.system_mem_usage as u64),Bar::with_label("Hytale mem usage", self.hytale_mem_usage as u64)])
-            .max(100)
-            .block(Block::bordered().title("Barchat"))
-            .bar_width(25)
-            .bar_style(Style::new().yellow())
-            .value_style(Style::new().red().bold())
-            .label_style(Style::new().white())
-            .bar_gap(1),
+            Gauge::default()
+            .block(Block::bordered().title("System cpu usage"))
+            .gauge_style(Style::new().white().on_black().italic())
+            .ratio((self.system_cpu_usage / 100.0).into()),
             layout[1]);
     }
     fn draw_test(&self, frame: &mut Frame) {
@@ -313,7 +321,7 @@ impl Pressure {
         }
         let mut split_test_arg: Vec<&str> = full[1].split("=").collect();
         for arg in full.iter().skip(1) {
-            /* first value is avg then percentage*/
+            /* first value is avgethen percentage*/
             /* so set first value to string name and second to f64 by parsing the string into f64*/
             split_test_arg = arg.split("=").collect();
             let avg_second = split_test_arg[0];
