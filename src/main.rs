@@ -192,7 +192,7 @@ impl App {
                 .block(Block::new().borders(Borders::ALL)),
             layout[0]);
         frame.render_widget(
-            BarChart::new([Bar::with_label("System cpu usage", self.system_cpu_usage as u64), Bar::with_label("Hytale system cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("System mem usage", self.system_mem_usage as u64),Bar::with_label("Hytale mem usage", self.system_mem_usage as u64)])
+            BarChart::new([Bar::with_label("System cpu usage", self.system_cpu_usage as u64), Bar::with_label("Hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("System mem usage", self.system_mem_usage as u64),Bar::with_label("Hytale mem usage", self.system_mem_usage as u64)])
             .max(100)
             .block(Block::bordered().title("Barchat"))
             .bar_width(25)
