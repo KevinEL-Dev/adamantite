@@ -99,6 +99,8 @@ pub struct App {
     counter: u8,
     system_cpu_usage: f32,
     hytale_cpu_usage: f32,
+    system_mem_usage: f64,
+    hytale_mem_usage: f64,
     exit: bool,
 }
 impl App {
@@ -111,7 +113,16 @@ impl App {
 
                 let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
                 let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
+                let curr_system_mem_in_bytes = sys.used_memory();
+                let curr_hytale_mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
+                let curr_hytale_mem_in_gigabytes =
+                    return_mem_in_gigabytes(curr_hytale_mem_in_bytes as f64);
+                let curr_system_mem_in_gigabytes =
+                    return_mem_in_gigabytes(curr_system_mem_in_bytes as f64);
 
+                sys.refresh_memory_specifics(
+                    sysinfo::MemoryRefreshKind::everything().with_ram(),
+                );
                 sys.refresh_cpu_usage();
                 let mut current_system_cpu_usage: f32 = 0.0;
                 for cpu in sys.cpus() {
@@ -120,6 +131,8 @@ impl App {
                 let current_system_cpu_usage = (current_system_cpu_usage / total_available_cpu_percentage) * 100.0;
                 self.update_sys_cpu_usage(current_system_cpu_usage);
                 self.update_hytale_cpu_usage((hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0);
+                self.update_sys_mem_usage(curr_system_mem_in_gigabytes);
+                self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
             terminal.draw(|frame| self.draw(frame))?;
@@ -156,6 +169,12 @@ impl App {
     fn update_hytale_cpu_usage(&mut self,curr_hytale_cpu_usage: f32){
         self.hytale_cpu_usage = curr_hytale_cpu_usage;
     }
+    fn update_sys_mem_usage(&mut self,curr_mem_usage: f64){
+        self.system_mem_usage = curr_mem_usage;
+    }
+    fn update_hytale_mem_usage(&mut self,curr_hytale_mem_usage: f64){
+        self.hytale_mem_usage = curr_hytale_mem_usage;
+    }
 }
 impl Widget for &App {
     fn render(self, area: Rect, buf: &mut Buffer){
@@ -174,7 +193,16 @@ impl Widget for &App {
             " ".into(),
             "Hytale CPU Usage: ".into(),
             self.hytale_cpu_usage.to_string().yellow(),
-        ])]);
+            " ".into(),
+            "System Mem Usage: ".into(),
+            self.system_mem_usage.to_string().yellow(),
+            " GB".into(),
+            " ".into(),
+            "Hytale Mem Usage: ".into(),
+            self.hytale_mem_usage.to_string().yellow(),
+            " GB".into(),
+        ])
+        ]);
 
         Paragraph::new(counter_text)
             .centered()
