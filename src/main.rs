@@ -1,5 +1,5 @@
 use chrono::{TimeDelta, prelude::*};
-use clap::{Parser, Subcommand, ValueEnum,Args};
+use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
@@ -9,7 +9,7 @@ use std::process;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use serde::Serialize;
-use sysinfo::{Disks, Pid, ProcessRefreshKind, ProcessesToUpdate, System};
+use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 use std::io;
 
 use crossterm::event::{self, Event, KeyCode, KeyEvent,KeyEventKind};
@@ -23,10 +23,8 @@ use ratatui::{
     DefaultTerminal, Frame,
 };
 use ratatui::prelude::*;
-use ratatui::widgets::Borders;
 use ratatui::widgets::{Bar, BarChart};
 use ratatui::style::{Style};
-use ratatui::widgets::{Gauge};
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
@@ -156,7 +154,7 @@ impl App {
         frame.render_widget(
             BarChart::new([Bar::with_label("system cpu usage", self.system_cpu_usage as u64), Bar::with_label("hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("system mem usage", self.system_mem_usage as u64),Bar::with_label("hytale mem usage", self.hytale_mem_usage as u64)])
             .max(100)
-            .block(Block::bordered().title("barchat"))
+            .block(Block::bordered().title("Live Chart"))
             .bar_width(25)
             .bar_style(Style::new().green())
             .value_style(Style::new().red().bold())
