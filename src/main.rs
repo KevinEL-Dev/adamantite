@@ -312,6 +312,20 @@ impl Pressure {
         }
     }
 }
+struct HytaleLog {
+    first_date: String,
+    host_name: String,
+    command_name: String,
+    pid: String,
+    time_of_log: String,
+    log_type: String,
+    info: String,
+}
+impl HytaleLog {
+    fn init_log(){
+        todo!()
+    }
+}
 fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     let mut file_path = "";
     match struct_avg.system_resource {
@@ -353,6 +367,7 @@ fn main() {
     for disk in disks.list() {
         println!("[{:?}] {:?}", disk.name(), disk.usage());
     }*/
+    get_hytale_logs();
     match &args.command {
         Some(Commands::Track {
             system_resource,
@@ -569,6 +584,18 @@ fn find_pid_of_hytale() -> u32 {
     let s = String::from_utf8_lossy(&output.stdout).to_string();
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
     return pid_from_s;
+}
+fn get_hytale_logs() {
+    let journalctl_child = Command::new("/bin/journalctl")
+        .arg("-u")
+        // could depend on service name so maybe add config for this
+        .arg("hytale")
+        .arg("--since")
+        .arg("500ms ago")
+        .output()
+        .expect("failed to start journalctl");
+    let ps_out = String::from_utf8_lossy(&journalctl_child.stdout).to_string();
+    println!("{} output from journalctl",ps_out);
 }
 fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     let mut s = System::new_all();
