@@ -144,43 +144,6 @@ impl App {
         }
         Ok(())
     }
-    pub fn test_run(&mut self, terminal: &mut DefaultTerminal,interval_ms: i64,sys: &mut System,hytale_pid: u32) -> io::Result<()>{
-        let num_of_cpus = sys.cpus().len() as f32;
-        let mut last_emit = Instant::now();
-        while !self.exit {
-            if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
-                sys.refresh_memory_specifics(
-                    sysinfo::MemoryRefreshKind::everything().with_ram(),
-                );
-
-                sys.refresh_cpu_usage();
-                let total_available_cpu_percentage: f32 = num_of_cpus * 100.0;
-                let hytale_curr_cpu_usage = get_cpu_usage_from_pid(hytale_pid);
-                let curr_system_mem_in_bytes = sys.used_memory();
-                let curr_hytale_mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
-                let curr_hytale_mem_in_gigabytes =
-                    return_mem_in_gigabytes(curr_hytale_mem_in_bytes as f64);
-                let curr_system_mem_in_gigabytes =
-                    return_mem_in_gigabytes(curr_system_mem_in_bytes as f64);
-
-                let mut current_system_cpu_usage: f32 = 0.0;
-                for cpu in sys.cpus() {
-                    current_system_cpu_usage += cpu.cpu_usage();
-                }
-                let current_system_cpu_usage = (current_system_cpu_usage / total_available_cpu_percentage) * 100.0;
-                self.update_sys_cpu_usage(current_system_cpu_usage);
-                self.update_hytale_cpu_usage((hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0);
-                self.update_sys_mem_usage(curr_system_mem_in_gigabytes);
-                self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
-                last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
-            }
-            terminal.draw(|frame| self.draw(frame))?;
-            if event::poll(Duration::from_millis(16))? {
-                self.handle_events()?;
-            }
-        }
-        Ok(())
-    }
     fn draw(&self, frame: &mut Frame) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
@@ -200,9 +163,6 @@ impl App {
             .label_style(Style::new().white())
             .bar_gap(1),
             layout[1]);
-    }
-    fn draw_test(&self, frame: &mut Frame) {
-        //frame.render_widget(self,frame.area());
     }
     fn handle_events(&mut self) -> io::Result<()>{
         match event::read()? {
