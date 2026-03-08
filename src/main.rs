@@ -697,7 +697,7 @@ fn show_system_pressure(pressure_type: PressureType) {
 }
 // test function that returns what journalctl output will parse
 fn get_test_journalctl_output(journalctl_output: String )  -> Vec<HytaleLog> {
-    let empty_journalctl_output: String = String::from("-- No entries --");
+    let empty_journalctl_output: String = String::from("-- No entries --\n");
     if journalctl_output == empty_journalctl_output{
         println!("output from journalctl is empty");
     }else{
