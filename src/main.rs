@@ -312,18 +312,48 @@ impl Pressure {
         }
     }
 }
+#[derive(Debug)]
 struct HytaleLog {
     first_date: String,
     host_name: String,
     command_name: String,
-    pid: String,
     time_of_log: String,
     log_type: String,
     info: String,
+    who: String,
 }
 impl HytaleLog {
-    fn init_log(){
-        todo!()
+    fn init_log(one_log_line: Vec<&str>) -> HytaleLog{
+        // first_date will be month, day, time
+        let first_date_slice = &one_log_line[0..3];
+        let first_date: String = first_date_slice.join(" ");
+
+        // get host name
+        let host_name: String = one_log_line[3].to_string();
+
+        // disclaimer, this assumses that the command name is always start.sh
+        let command_name_slice = &one_log_line[4][0..8];
+        let command_name: String = command_name_slice.to_string();
+
+        let time_of_log_slice = &one_log_line[6..8];
+        let time_of_log: String = time_of_log_slice.join(" ");
+
+        let log_type: String = one_log_line[7].to_string();
+        
+        let who: String = one_log_line[8].to_string();
+
+        let info_slice = &one_log_line[9..];
+        let info: String = info_slice.join(" ");
+
+        HytaleLog {
+            first_date,
+            host_name,
+            command_name,
+            time_of_log,
+            log_type,
+            info,
+            who,
+        }
     }
 }
 fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
@@ -363,11 +393,8 @@ fn main() {
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
-    /*let disks = Disks::new_with_refreshed_list();
-    for disk in disks.list() {
-        println!("[{:?}] {:?}", disk.name(), disk.usage());
-    }*/
-    get_hytale_logs();
+    let hytale_log = get_hytale_logs();
+    let arary_of_hytale_log = get_test_journalctl_output(hytale_log);
     match &args.command {
         Some(Commands::Track {
             system_resource,
@@ -585,7 +612,7 @@ fn find_pid_of_hytale() -> u32 {
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
     return pid_from_s;
 }
-fn get_hytale_logs() {
+fn get_hytale_logs() -> String{
     let journalctl_child = Command::new("/bin/journalctl")
         .arg("-u")
         // could depend on service name so maybe add config for this
@@ -595,7 +622,7 @@ fn get_hytale_logs() {
         .output()
         .expect("failed to start journalctl");
     let ps_out = String::from_utf8_lossy(&journalctl_child.stdout).to_string();
-    println!("{} output from journalctl",ps_out);
+    return ps_out;
 }
 fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     let mut s = System::new_all();
@@ -668,3 +695,60 @@ fn show_system_pressure(pressure_type: PressureType) {
         }
     }
 }
+// test function that returns what journalctl output will parse
+fn get_test_journalctl_output(journalctl_output: String )  -> Vec<HytaleLog> {
+    let empty_journalctl_output: String = String::from("-- No entries --");
+    if journalctl_output == empty_journalctl_output{
+        println!("output from journalctl is empty");
+    }else{
+        println!("output from journalctl is not empty");
+    }
+    let line_of_logs: Vec<&str> = journalctl_output.lines().collect();
+
+    let mut logs_white_space: Vec<Vec<&str>> = Vec::new();
+
+    let mut log_structs: Vec<HytaleLog> = Vec::new();
+
+    for line in line_of_logs{
+        logs_white_space.push(line.split_whitespace().collect());
+    }
+
+    for split_line in logs_white_space{
+        log_structs.push(HytaleLog::init_log(split_line));
+    }
+
+    // for log in log_structs{
+    //     println!("{:?}",log);
+    // }
+
+    return log_structs;
+    // i want to return a data structure that has
+    // each line split by white space.
+    // i want to be able to iterate over each of these lines
+    // and then create a struct log that has information about each of them
+}
+// maybe use this code for testing parsing
+// fn get_test_journalctl_output()  -> Vec<HytaleLog> {
+//     let path_to_test_output = Path::new("./journalctl_output.txt");
+//
+//     let mut f = File::open(path_to_test_output).expect("failed to open journalctl_output.txt file");
+//     let mut content_test_output = String::new();
+//     f.read_to_string(&mut content_test_output)
+//         .expect("failed to read the file");
+//
+//     let line_of_logs: Vec<&str> = content_test_output.lines().collect();
+//
+//     let mut logs_white_space: Vec<Vec<&str>> = Vec::new();
+//
+//     let mut log_structs: Vec<HytaleLog> = Vec::new();
+//
+//     for line in line_of_logs{
+//         logs_white_space.push(line.split_whitespace().collect());
+//     }
+//
+//     for split_line in logs_white_space{
+//         log_structs.push(HytaleLog::init_log(split_line));
+//     }
+//
+//     return log_structs;
+// }
