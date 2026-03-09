@@ -189,14 +189,14 @@ impl App {
             .value_style(Style::new().red().bold())
             .label_style(Style::new().white())
             .bar_gap(1),
-            inner_layout[1]);
+            inner_layout[0]);
         frame.render_widget(List::new(self.current_hytale_log_strings.clone())
         .block(Block::bordered().title("List"))
         .style(Style::new().white())
         .highlight_style(Style::new().italic())
         .highlight_symbol(">>")
         .repeat_highlight_symbol(true)
-        .direction(ListDirection::BottomToTop),inner_layout[0]);
+        .direction(ListDirection::BottomToTop),inner_layout[1]);
     }
     fn handle_events(&mut self) -> io::Result<()>{
         match event::read()? {
