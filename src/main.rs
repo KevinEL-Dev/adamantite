@@ -20,7 +20,7 @@ use ratatui::{
     style::Stylize,
     symbols::border,
     text::{Line, Text},
-    widgets::{Block, Paragraph,Widget},
+    widgets::{Block, Paragraph,Widget,List, ListDirection, ListItem},
     DefaultTerminal, Frame,
 };
 use ratatui::prelude::*;
@@ -117,6 +117,8 @@ pub struct App {
     hytale_cpu_usage: f32,
     system_mem_usage: f64,
     hytale_mem_usage: f64,
+    current_hytale_log: Vec<HytaleLog>,
+    current_hytale_log_strings: Vec<String>,
     exit: bool,
 }
 impl App {
@@ -146,6 +148,11 @@ impl App {
                 let current_system_cpu_usage = (current_system_cpu_usage / total_available_cpu_percentage) * 100.0;
                 self.update_sys_cpu_usage(current_system_cpu_usage);
                 self.update_hytale_cpu_usage((hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0);
+                let hytale_log = get_hytale_logs();
+                let arary_of_hytale_log = match get_test_journalctl_output(hytale_log){
+                    Ok(arr) => arr,
+                    Err(error) => [].to_vec() ,
+                };
                 self.update_sys_mem_usage(curr_system_mem_in_gigabytes);
                 self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
@@ -165,6 +172,13 @@ impl App {
                 Constraint::Percentage(50),
             ])
             .split(frame.area());
+        let inner_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Percentage(50),
+                Constraint::Percentage(50),
+            ])
+            .split(layout[1]);
         frame.render_widget(self,layout[0]);
         frame.render_widget(
             BarChart::new([Bar::with_label("system cpu usage", self.system_cpu_usage as u64), Bar::with_label("hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("system mem usage", self.system_mem_usage as u64),Bar::with_label("hytale mem usage", self.hytale_mem_usage as u64)])
@@ -175,7 +189,14 @@ impl App {
             .value_style(Style::new().red().bold())
             .label_style(Style::new().white())
             .bar_gap(1),
-            layout[1]);
+            inner_layout[1]);
+        frame.render_widget(List::new(self.current_hytale_log_strings.clone())
+        .block(Block::bordered().title("List"))
+        .style(Style::new().white())
+        .highlight_style(Style::new().italic())
+        .highlight_symbol(">>")
+        .repeat_highlight_symbol(true)
+        .direction(ListDirection::BottomToTop),inner_layout[0]);
     }
     fn handle_events(&mut self) -> io::Result<()>{
         match event::read()? {
@@ -206,6 +227,18 @@ impl App {
     }
     fn update_hytale_mem_usage(&mut self,curr_hytale_mem_usage: f64){
         self.hytale_mem_usage = curr_hytale_mem_usage;
+    }
+    fn update_current_hytale_log(&mut self, curr_hytale_logs: Vec<HytaleLog>){
+        self.current_hytale_log = curr_hytale_logs;
+    }
+    fn convert_hytale_log_to_array_of_strings(&mut self) {
+
+        let mut arr_string: Vec<String> = Vec::new();
+
+        for hytale_log in &self.current_hytale_log{
+            arr_string.push(hytale_log.info.clone());
+        }
+        self.current_hytale_log_strings = arr_string;
     }
 }
 impl Widget for &App {
@@ -327,7 +360,7 @@ impl Pressure {
         }
     }
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct HytaleLog {
     first_date: String,
     host_name: String,
@@ -408,11 +441,6 @@ fn main() {
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
-    let hytale_log = get_hytale_logs();
-    let arary_of_hytale_log = match get_test_journalctl_output(hytale_log){
-        Ok(arr) => arr,
-        Err(error) => panic!("{error}"),
-    };
     match &args.command {
         Some(Commands::Track {
             system_resource,
