@@ -235,9 +235,6 @@ impl App {
 
         let mut arr_string: Vec<String> = Vec::new();
 
-        if self.current_hytale_log.len() == 0{
-            return
-        }
         for hytale_log in &self.current_hytale_log{
             arr_string.push(hytale_log.info.clone());
         }
@@ -748,11 +745,8 @@ fn show_system_pressure(pressure_type: PressureType) {
 fn get_test_journalctl_output(journalctl_output: String )  -> Result<Vec<HytaleLog>,CustomError> {
     let empty_journalctl_output: String = String::from("-- No entries --\n");
     if journalctl_output == empty_journalctl_output{
-        println!("output from journalctl is empty");
         return Err(CustomError::NoJournalCtlOutput);
-    }else{
-        println!("output from journalctl is not empty");
-    }
+    }    
     let line_of_logs: Vec<&str> = journalctl_output.lines().collect();
 
     let mut logs_white_space: Vec<Vec<&str>> = Vec::new();
