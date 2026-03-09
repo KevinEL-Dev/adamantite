@@ -7,6 +7,7 @@ use std::time::{Duration,Instant};
 use std::{error::Error};
 use std::process;
 use std::path::Path;
+use std::fmt::Display;
 use std::process::{Command, Stdio};
 use serde::Serialize;
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
@@ -29,6 +30,20 @@ const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
 
+#[derive(Debug)]
+enum CustomError{
+    NoJournalCtlOutput
+}
+impl Error for CustomError{}
+
+impl Display for CustomError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result{
+        let message = match self{
+            Self::NoJournalCtlOutput => "Error: No entry for journalctl",
+        };
+        write!(f,"Error: {message}")
+    }
+}
 /// Track system resources over time
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
@@ -394,7 +409,10 @@ fn main() {
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
     let hytale_log = get_hytale_logs();
-    let arary_of_hytale_log = get_test_journalctl_output(hytale_log);
+    let arary_of_hytale_log = match get_test_journalctl_output(hytale_log){
+        Ok(arr) => arr,
+        Err(error) => panic!("{error}"),
+    };
     match &args.command {
         Some(Commands::Track {
             system_resource,
@@ -696,10 +714,11 @@ fn show_system_pressure(pressure_type: PressureType) {
     }
 }
 // test function that returns what journalctl output will parse
-fn get_test_journalctl_output(journalctl_output: String )  -> Vec<HytaleLog> {
+fn get_test_journalctl_output(journalctl_output: String )  -> Result<Vec<HytaleLog>,CustomError> {
     let empty_journalctl_output: String = String::from("-- No entries --\n");
     if journalctl_output == empty_journalctl_output{
         println!("output from journalctl is empty");
+        return Err(CustomError::NoJournalCtlOutput);
     }else{
         println!("output from journalctl is not empty");
     }
@@ -721,7 +740,7 @@ fn get_test_journalctl_output(journalctl_output: String )  -> Vec<HytaleLog> {
     //     println!("{:?}",log);
     // }
 
-    return log_structs;
+    return Ok(log_structs);
     // i want to return a data structure that has
     // each line split by white space.
     // i want to be able to iterate over each of these lines
