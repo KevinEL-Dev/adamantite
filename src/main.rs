@@ -235,8 +235,9 @@ impl App {
     }
     fn convert_hytale_log_to_array_of_strings(&mut self ) {
         for hytale_log in &self.current_hytale_log{
-            let curr_time = Utc::now().time().to_string();
-            let string_curr_sys_usage = String::from(" ") + &self.system_cpu_usage.to_string() + &curr_time;
+            let local_time = Local::now();
+            let formatted_time = local_time.format("%Y-%m-%d %H:%M:%S").to_string();
+            let string_curr_sys_usage = String::from(" ") + &self.system_cpu_usage.to_string() + &String::from(" ") + &formatted_time;
 
             self.current_hytale_log_strings.push(hytale_log.who.clone() + &string_curr_sys_usage);
         }
