@@ -372,7 +372,8 @@ impl HytaleLog {
     fn init_log(one_log_line: Vec<&str>) -> Option<HytaleLog>{
 
         if one_log_line.len() < 9{
-            panic!("Invalid log line: {:?}",one_log_line);
+            // panic!("Invalid log line: {:?}",one_log_line);
+            return None;
         }
         // first_date will be month, day, time
         let first_date_slice = &one_log_line[0..3];
