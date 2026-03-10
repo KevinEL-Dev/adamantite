@@ -234,13 +234,9 @@ impl App {
         self.current_hytale_log = curr_hytale_logs;
     }
     fn convert_hytale_log_to_array_of_strings(&mut self) {
-
-        let mut arr_string: Vec<String> = Vec::new();
-
         for hytale_log in &self.current_hytale_log{
-            arr_string.push(hytale_log.info.clone());
+            self.current_hytale_log_strings.push(hytale_log.info.clone());
         }
-        self.current_hytale_log_strings = arr_string;
     }
 }
 impl Widget for &App {
