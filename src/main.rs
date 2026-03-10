@@ -369,7 +369,11 @@ struct HytaleLog {
     who: String,
 }
 impl HytaleLog {
-    fn init_log(one_log_line: Vec<&str>) -> HytaleLog{
+    fn init_log(one_log_line: Vec<&str>) -> Option<HytaleLog>{
+
+        if one_log_line.len() < 9{
+            panic!("Invalid log line: {:?}",one_log_line);
+        }
         // first_date will be month, day, time
         let first_date_slice = &one_log_line[0..3];
         let first_date: String = first_date_slice.join(" ");
@@ -378,8 +382,10 @@ impl HytaleLog {
         let host_name: String = one_log_line[3].to_string();
 
         // disclaimer, this assumses that the command name is always start.sh
-        let command_name_slice = &one_log_line[4][0..8];
-        let command_name: String = command_name_slice.to_string();
+        // let command_name_slice = &one_log_line[4][0..8];
+        // first ai line of code
+        let command_name = one_log_line[4].split('[').next().unwrap_or("").to_string();
+        // let command_name: String = command_name_slice.to_string();
 
         let time_of_log_slice = &one_log_line[6..8];
         let time_of_log: String = time_of_log_slice.join(" ");
@@ -391,7 +397,7 @@ impl HytaleLog {
         let info_slice = &one_log_line[9..];
         let info: String = info_slice.join(" ");
 
-        HytaleLog {
+        Some(HytaleLog {
             first_date,
             host_name,
             command_name,
@@ -399,7 +405,7 @@ impl HytaleLog {
             log_type,
             info,
             who,
-        }
+        })
     }
 }
 fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
@@ -756,7 +762,13 @@ fn get_test_journalctl_output(journalctl_output: String )  -> Result<Vec<HytaleL
     }
 
     for split_line in logs_white_space{
-        log_structs.push(HytaleLog::init_log(split_line));
+        match HytaleLog::init_log(split_line){
+            Some(log) => {
+                log_structs.push(log)
+            }
+            None => {}
+        }
+        // log_structs.push(test_log_type);
     }
 
     // for log in log_structs{
