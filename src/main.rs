@@ -233,9 +233,11 @@ impl App {
     fn update_current_hytale_log(&mut self, curr_hytale_logs: Vec<HytaleLog>){
         self.current_hytale_log = curr_hytale_logs;
     }
-    fn convert_hytale_log_to_array_of_strings(&mut self) {
+    fn convert_hytale_log_to_array_of_strings(&mut self ) {
         for hytale_log in &self.current_hytale_log{
-            self.current_hytale_log_strings.push(hytale_log.who.clone());
+            let string_curr_sys_usage = String::from(" ") + &self.system_cpu_usage.to_string();
+
+            self.current_hytale_log_strings.push(hytale_log.who.clone() + &string_curr_sys_usage);
         }
     }
 }
