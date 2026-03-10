@@ -235,7 +235,7 @@ impl App {
     }
     fn convert_hytale_log_to_array_of_strings(&mut self) {
         for hytale_log in &self.current_hytale_log{
-            self.current_hytale_log_strings.push(hytale_log.info.clone());
+            self.current_hytale_log_strings.push(hytale_log.who.clone());
         }
     }
 }
