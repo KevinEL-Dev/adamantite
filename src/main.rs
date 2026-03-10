@@ -149,12 +149,14 @@ impl App {
                 self.update_sys_cpu_usage(current_system_cpu_usage);
                 self.update_hytale_cpu_usage((hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0);
                 let hytale_log = get_hytale_logs();
-                let arary_of_hytale_log = match get_test_journalctl_output(hytale_log){
+                let array_of_hytale_log = match get_test_journalctl_output(hytale_log){
                     Ok(arr) => arr,
                     Err(error) => [].to_vec() ,
                 };
                 self.update_sys_mem_usage(curr_system_mem_in_gigabytes);
                 self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
+                self.update_current_hytale_log(array_of_hytale_log);
+                self.convert_hytale_log_to_array_of_strings();
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
             terminal.draw(|frame| self.draw(frame))?;
