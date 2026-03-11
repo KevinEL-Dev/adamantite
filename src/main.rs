@@ -390,7 +390,6 @@ impl HytaleLog {
         // let command_name_slice = &one_log_line[4][0..8];
         // first ai line of code
         let command_name = one_log_line[4].split('[').next().unwrap_or("").to_string();
-        // let command_name: String = command_name_slice.to_string();
 
         let time_of_log_slice = &one_log_line[6..8];
         let time_of_log: String = time_of_log_slice.join(" ");
@@ -413,6 +412,7 @@ impl HytaleLog {
         })
     }
 }
+// this will create a csv file
 fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     let mut file_path = "";
     match struct_avg.system_resource {
@@ -435,6 +435,7 @@ fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     wtr.flush()?;
     Ok(())
 }
+// this will run ratatui screen
 fn run_live(interval_ms: i64, sys: &mut System,hytale_pid: u32) -> io::Result<()> {
     ratatui::run(|terminal| App::default().run(terminal,interval_ms,sys,hytale_pid))
 }
@@ -750,7 +751,7 @@ fn show_system_pressure(pressure_type: PressureType) {
         }
     }
 }
-// test function that returns what journalctl output will parse
+// gets hytale logs and returns array of each hytale log line in a vec
 fn get_test_journalctl_output(journalctl_output: String )  -> Result<Vec<HytaleLog>,CustomError> {
     let empty_journalctl_output: String = String::from("-- No entries --\n");
     if journalctl_output == empty_journalctl_output{
@@ -766,6 +767,7 @@ fn get_test_journalctl_output(journalctl_output: String )  -> Result<Vec<HytaleL
         logs_white_space.push(line.split_whitespace().collect());
     }
 
+    // only push log that is parsable
     for split_line in logs_white_space{
         match HytaleLog::init_log(split_line){
             Some(log) => {
@@ -773,18 +775,9 @@ fn get_test_journalctl_output(journalctl_output: String )  -> Result<Vec<HytaleL
             }
             None => {}
         }
-        // log_structs.push(test_log_type);
     }
 
-    // for log in log_structs{
-    //     println!("{:?}",log);
-    // }
-
     return Ok(log_structs);
-    // i want to return a data structure that has
-    // each line split by white space.
-    // i want to be able to iterate over each of these lines
-    // and then create a struct log that has information about each of them
 }
 // maybe use this code for testing parsing
 // fn get_test_journalctl_output()  -> Vec<HytaleLog> {
