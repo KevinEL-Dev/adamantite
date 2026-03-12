@@ -20,7 +20,7 @@ use ratatui::{
     style::Stylize,
     symbols::border,
     text::{Line, Text},
-    widgets::{Block, Paragraph,Widget,List, ListDirection, ListItem,Scrollbar, ScrollbarOrientation,ScrollbarState},
+    widgets::{Block, Paragraph,Widget,List, ListDirection, ListState,Scrollbar, ScrollbarOrientation,ScrollbarState},
     DefaultTerminal, Frame,
 };
 use ratatui::prelude::*;
@@ -121,12 +121,15 @@ pub struct App {
     current_hytale_log_strings: Vec<String>,
     vertical_scroll: usize,
     vertical: ScrollbarState,
+    state: ListState,
+    curr_index: i64,
     exit: bool,
 }
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal,interval_ms: i64,sys: &mut System,hytale_pid: u32) -> io::Result<()>{
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
+        let mut state = ListState::default();
         let mut vertical = ScrollbarState::new(100);
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
@@ -162,14 +165,14 @@ impl App {
                 self.convert_hytale_log_to_array_of_strings();
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
-            terminal.draw(|frame| self.draw(frame,&mut vertical))?;
+            terminal.draw(|frame| self.draw(frame,&mut vertical,&mut state))?;
             if event::poll(Duration::from_millis(16))? {
-                self.handle_events()?;
+                self.handle_events(&mut state)?;
             }
         }
         Ok(())
     }
-    fn draw(&self, frame: &mut Frame,vertical: &mut ScrollbarState) {
+    fn draw(&self, frame: &mut Frame,vertical: &mut ScrollbarState,state: &mut ListState) {
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓"));
@@ -187,6 +190,13 @@ impl App {
                 Constraint::Percentage(50),
             ])
             .split(layout[1]);
+        let list_widget = List::new(self.current_hytale_log_strings.clone())
+        .block(Block::bordered().title("List"))
+        .style(Style::new().white())
+        .highlight_style(Style::new().italic())
+        .highlight_symbol(">>")
+        .repeat_highlight_symbol(true)
+        .direction(ListDirection::TopToBottom);
         frame.render_widget(self,layout[0]);
         frame.render_widget(
             BarChart::new([Bar::with_label("system cpu usage", self.system_cpu_usage as u64), Bar::with_label("hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("system mem usage", self.system_mem_usage as u64),Bar::with_label("hytale mem usage", self.hytale_mem_usage as u64)])
@@ -197,14 +207,7 @@ impl App {
             .label_style(Style::new().white())
             .bar_gap(1),
             inner_layout[1]);
-        frame.render_widget(List::new(self.current_hytale_log_strings.clone())
-        .scroll_padding(1)
-        .block(Block::bordered().title("List"))
-        .style(Style::new().white())
-        .highlight_style(Style::new().italic())
-        .highlight_symbol(">>")
-        .repeat_highlight_symbol(true)
-        .direction(ListDirection::TopToBottom),inner_layout[0]);
+        frame.render_stateful_widget(list_widget,inner_layout[0],state);
         frame.render_stateful_widget(
             scrollbar,
             inner_layout[0].inner(Margin{
@@ -214,25 +217,26 @@ impl App {
             vertical,
         );
     }
-    fn handle_events(&mut self) -> io::Result<()>{
+    fn handle_events(&mut self,state: &mut ListState) -> io::Result<()>{
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press =>{
-                self.handle_key_event(key_event)
+                self.handle_key_event(key_event,state)
             }
             _ => {}
         };
         Ok(())
     }
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event(&mut self, key_event: KeyEvent, state: &mut ListState) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('j') => {
                 self.vertical_scroll += 5;
-                self.vertical.next();
+                state.select(Some(self.curr_index.try_into().unwrap()));
+                
             },
             KeyCode::Char('k') => {
                 self.vertical_scroll -= 5;
-                self.vertical.prev();
+                state.select(Some(self.curr_index.try_into().unwrap()));
             },
             _ => {}
         }
@@ -266,6 +270,14 @@ impl App {
     }
     fn update_current_vertical(&mut self,new_vertical: ScrollbarState){
         self.vertical = new_vertical;
+    }
+    fn update_current_index_in_list(&mut self, offset: i64){
+        if offset == -1 && self.curr_index > 0{
+            self.curr_index += offset
+        }
+        else if offset == 1 && self.curr_index <= self.current_hytale_log_strings.len().try_into().unwrap(){
+            self.curr_index += offset
+        }
     }
 }
 impl Widget for &App {
