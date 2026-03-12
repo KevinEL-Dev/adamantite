@@ -198,6 +198,7 @@ impl App {
             .bar_gap(1),
             inner_layout[1]);
         frame.render_widget(List::new(self.current_hytale_log_strings.clone())
+        .scroll_padding(1)
         .block(Block::bordered().title("List"))
         .style(Style::new().white())
         .highlight_style(Style::new().italic())
