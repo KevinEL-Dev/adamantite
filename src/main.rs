@@ -130,6 +130,7 @@ impl App {
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
         let mut state = ListState::default();
+        self.curr_index = 0;
         let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(0);
 
         while !self.exit {
@@ -233,13 +234,13 @@ impl App {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('j') => {
-                self.vertical_scroll += 5;
+                self.increment_current_scroll();
                 self.increment_current_index();
                 state.select(Some(self.curr_index.try_into().unwrap()));
                 
             },
             KeyCode::Char('k') => {
-                self.vertical_scroll -= 5;
+                self.deincrement_current_scroll();
                 self.deincrement_current_index();
                 state.select(Some(self.curr_index.try_into().unwrap()));
             },
@@ -279,11 +280,25 @@ impl App {
     fn deincrement_current_index(&mut self){
         if self.curr_index > 0{
             self.curr_index -= 1
+        }else{
+            self.curr_index = 0
         }
     }
     fn increment_current_index(&mut self){
         if self.curr_index < self.current_hytale_log_strings.len().try_into().unwrap(){
             self.curr_index += 1
+        }
+    }
+    fn deincrement_current_scroll(&mut self){
+        if self.vertical_scroll > 0{
+            self.vertical_scroll -= 1
+        }else{
+            self.curr_index = 0
+        }
+    }
+    fn increment_current_scroll(&mut self){
+        if self.vertical_scroll < self.current_hytale_log_strings.len().try_into().unwrap(){
+            self.vertical_scroll += 1
         }
     }
 }
