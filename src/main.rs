@@ -231,11 +231,13 @@ impl App {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('j') => {
                 self.vertical_scroll += 5;
+                self.update_current_index_in_list(1);
                 state.select(Some(self.curr_index.try_into().unwrap()));
                 
             },
             KeyCode::Char('k') => {
                 self.vertical_scroll -= 5;
+                self.update_current_index_in_list(-1);
                 state.select(Some(self.curr_index.try_into().unwrap()));
             },
             _ => {}
