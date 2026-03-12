@@ -280,7 +280,7 @@ impl App {
         if offset == -1 && self.curr_index > 0{
             self.curr_index += offset
         }
-        else if offset == 1 && self.curr_index <= self.current_hytale_log_strings.len().try_into().unwrap(){
+        else if offset == 1 && self.curr_index < self.current_hytale_log_strings.len().try_into().unwrap(){
             self.curr_index += offset
         }
     }
