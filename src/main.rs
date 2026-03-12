@@ -119,6 +119,7 @@ pub struct App {
     hytale_mem_usage: f64,
     current_hytale_log: Vec<HytaleLog>,
     current_hytale_log_strings: Vec<String>,
+    vertical_scroll: usize,
     exit: bool,
 }
 impl App {
@@ -167,11 +168,10 @@ impl App {
         Ok(())
     }
     fn draw(&self, frame: &mut Frame) {
-        let vertical_scroll = 0;
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓"));
-        let mut scrollbar_state = ScrollbarState::new(self.current_hytale_log_strings.clone().len()).position(vertical_scroll);
+        let mut scrollbar_state = ScrollbarState::new(self.current_hytale_log_strings.clone().len()).position(self.vertical_scroll);
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -225,6 +225,8 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
+            KeyCode::Char('j') => self.vertical_scroll += 5,
+            KeyCode::Char('k') => self.vertical_scroll -= 5,
             _ => {}
         }
     }
