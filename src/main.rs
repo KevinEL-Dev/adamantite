@@ -234,13 +234,13 @@ impl App {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('j') => {
                 self.vertical_scroll += 5;
-                self.update_current_index_in_list(1);
+                self.increment_current_index();
                 state.select(Some(self.curr_index.try_into().unwrap()));
                 
             },
             KeyCode::Char('k') => {
                 self.vertical_scroll -= 5;
-                self.update_current_index_in_list(-1);
+                self.deincrement_current_index();
                 state.select(Some(self.curr_index.try_into().unwrap()));
             },
             _ => {}
@@ -276,12 +276,14 @@ impl App {
     fn update_current_vertical(&mut self,new_vertical: ScrollbarState){
         self.vertical = new_vertical;
     }
-    fn update_current_index_in_list(&mut self, offset: i64){
-        if offset == -1 && self.curr_index > 0{
-            self.curr_index += offset
+    fn deincrement_current_index(&mut self){
+        if self.curr_index > 0{
+            self.curr_index -= 1
         }
-        else if offset == 1 && self.curr_index < self.current_hytale_log_strings.len().try_into().unwrap(){
-            self.curr_index += offset
+    }
+    fn increment_current_index(&mut self){
+        if self.curr_index < self.current_hytale_log_strings.len().try_into().unwrap(){
+            self.curr_index += 1
         }
     }
 }
