@@ -127,7 +127,7 @@ impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal,interval_ms: i64,sys: &mut System,hytale_pid: u32) -> io::Result<()>{
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
-        let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.vertical_scroll);
+        let mut vertical = ScrollbarState::new(100);
         self.update_current_vertical(vertical);
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
@@ -161,22 +161,19 @@ impl App {
                 self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
                 self.update_current_hytale_log(array_of_hytale_log);
                 self.convert_hytale_log_to_array_of_strings();
-                vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.vertical_scroll);
-                self.update_current_vertical(vertical);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.draw(frame,&mut vertical))?;
             if event::poll(Duration::from_millis(16))? {
                 self.handle_events()?;
             }
         }
         Ok(())
     }
-    fn draw(&self, frame: &mut Frame,) {
+    fn draw(&self, frame: &mut Frame,vertical: &mut ScrollbarState) {
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓"));
-        let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.vertical_scroll);
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -214,7 +211,7 @@ impl App {
                 vertical: 1,
                 horizontal: 0,
             }),
-            &mut vertical,
+            vertical,
         );
     }
     fn handle_events(&mut self) -> io::Result<()>{
