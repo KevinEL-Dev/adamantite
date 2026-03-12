@@ -20,7 +20,7 @@ use ratatui::{
     style::Stylize,
     symbols::border,
     text::{Line, Text},
-    widgets::{Block, Paragraph,Widget,List, ListDirection, ListItem},
+    widgets::{Block, Paragraph,Widget,List, ListDirection, ListItem,Scrollbar, ScrollbarOrientation,ScrollbarState},
     DefaultTerminal, Frame,
 };
 use ratatui::prelude::*;
@@ -167,6 +167,11 @@ impl App {
         Ok(())
     }
     fn draw(&self, frame: &mut Frame) {
+        let vertical_scroll = 0;
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓"));
+        let mut scrollbar_state = ScrollbarState::new(self.current_hytale_log_strings.clone().len()).position(vertical_scroll);
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -199,6 +204,14 @@ impl App {
         .highlight_symbol(">>")
         .repeat_highlight_symbol(true)
         .direction(ListDirection::TopToBottom),inner_layout[0]);
+        frame.render_stateful_widget(
+            scrollbar,
+            inner_layout[0].inner(Margin{
+                vertical: 1,
+                horizontal: 0,
+            }),
+            &mut scrollbar_state,
+        );
     }
     fn handle_events(&mut self) -> io::Result<()>{
         match event::read()? {
