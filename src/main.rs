@@ -198,7 +198,7 @@ impl App {
         .highlight_style(Style::new().italic())
         .highlight_symbol(">>")
         .repeat_highlight_symbol(true)
-        .direction(ListDirection::BottomToTop),inner_layout[0]);
+        .direction(ListDirection::TopToBottom),inner_layout[0]);
     }
     fn handle_events(&mut self) -> io::Result<()>{
         match event::read()? {
