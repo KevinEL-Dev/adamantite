@@ -120,12 +120,15 @@ pub struct App {
     current_hytale_log: Vec<HytaleLog>,
     current_hytale_log_strings: Vec<String>,
     vertical_scroll: usize,
+    vertical: ScrollbarState,
     exit: bool,
 }
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal,interval_ms: i64,sys: &mut System,hytale_pid: u32) -> io::Result<()>{
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
+        let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.vertical_scroll);
+        self.update_current_vertical(vertical);
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
                 sys.refresh_memory_specifics(
@@ -158,6 +161,8 @@ impl App {
                 self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
                 self.update_current_hytale_log(array_of_hytale_log);
                 self.convert_hytale_log_to_array_of_strings();
+                vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.vertical_scroll);
+                self.update_current_vertical(vertical);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
             terminal.draw(|frame| self.draw(frame))?;
@@ -167,11 +172,11 @@ impl App {
         }
         Ok(())
     }
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame,) {
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓"));
-        let mut scrollbar_state = ScrollbarState::new(self.current_hytale_log_strings.clone().len()).position(self.vertical_scroll);
+        let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.vertical_scroll);
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -191,8 +196,7 @@ impl App {
             BarChart::new([Bar::with_label("system cpu usage", self.system_cpu_usage as u64), Bar::with_label("hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("system mem usage", self.system_mem_usage as u64),Bar::with_label("hytale mem usage", self.hytale_mem_usage as u64)])
             .max(100)
             .block(Block::bordered().title("Live Chart"))
-            .bar_width(25)
-            .bar_style(Style::new().green())
+            .bar_width(25) .bar_style(Style::new().green())
             .value_style(Style::new().red().bold())
             .label_style(Style::new().white())
             .bar_gap(1),
@@ -210,7 +214,7 @@ impl App {
                 vertical: 1,
                 horizontal: 0,
             }),
-            &mut scrollbar_state,
+            &mut vertical,
         );
     }
     fn handle_events(&mut self) -> io::Result<()>{
@@ -225,8 +229,14 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
-            KeyCode::Char('j') => self.vertical_scroll += 5,
-            KeyCode::Char('k') => self.vertical_scroll -= 5,
+            KeyCode::Char('j') => {
+                self.vertical_scroll += 5;
+                self.vertical.next();
+            },
+            KeyCode::Char('k') => {
+                self.vertical_scroll -= 5;
+                self.vertical.prev();
+            },
             _ => {}
         }
     }
@@ -256,6 +266,9 @@ impl App {
 
             self.current_hytale_log_strings.push(hytale_log.who.clone() + &string_curr_sys_usage);
         }
+    }
+    fn update_current_vertical(&mut self,new_vertical: ScrollbarState){
+        self.vertical = new_vertical;
     }
 }
 impl Widget for &App {
