@@ -130,7 +130,8 @@ impl App {
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
         let mut state = ListState::default();
-        let mut vertical = ScrollbarState::new(100);
+        let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(0);
+
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
                 sys.refresh_memory_specifics(
@@ -163,6 +164,8 @@ impl App {
                 self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
                 self.update_current_hytale_log(array_of_hytale_log);
                 self.convert_hytale_log_to_array_of_strings();
+                vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.curr_index.try_into().unwrap());
+                self.update_current_vertical(vertical);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
             terminal.draw(|frame| self.draw(frame,&mut vertical,&mut state))?;
