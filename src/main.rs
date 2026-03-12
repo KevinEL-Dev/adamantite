@@ -128,7 +128,6 @@ impl App {
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
         let mut vertical = ScrollbarState::new(100);
-        self.update_current_vertical(vertical);
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
                 sys.refresh_memory_specifics(
