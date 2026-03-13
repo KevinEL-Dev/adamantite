@@ -7,8 +7,9 @@ Adamantite is currently a command line tool similar to htop and top. It will pro
 # Why?
 My reasoning for building this tool is because I wanted to learn rust. But also I host my own hytale server and at one point my server was lagging and attempting to use htop to figure out why was difficult.So I thought I wish there was a way that I could get a high level overview on how Hytale and its processes are performing on your system.
 
+
 # Usage Currently
-If you are interested in cloning this repo and attempting to run this program I'll go over this now.
+![adamantite live demo](assets/adamantite_live_demo.gif)
 
 ## Installation methods
 There is binary realeses for linux, you can clone this repo, or run 
@@ -139,9 +140,6 @@ $ cargo run -- live
 This command will bring up a TUI where you can see live updates of your system memory and cpu usage as well as hytale's memory and cpu usage.
 
 TUI will now also present hytale logs when they happen. You can scroll through them using j for up navigation and k for down navigation.
-
-## Demo
-[![asciicast](https://asciinema.org/a/dnez5bkkAUUySw6R.svg)](https://asciinema.org/a/dnez5bkkAUUySw6R)
 
 ### Why is pressure important
 Pressure directly reflects time the server could not advance its game loop, making it a strong indicator of tick instability and perceived lag.
