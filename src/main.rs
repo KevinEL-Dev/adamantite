@@ -512,11 +512,7 @@ fn run_live(interval_ms: i64, sys: &mut System, hytale_pid: u32) -> io::Result<(
 fn main() {
     // parges user input
     let args = Cli::parse();
-    let start_time = Utc::now().time();
-    let mut end_time = Utc::now().time();
     let mut sys = System::new();
-    let mut diff = end_time - start_time;
-    let mut user_selected_time = 1;
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
@@ -545,86 +541,6 @@ fn main() {
                     output,
                 );
                 return;
-                // let mut mem_avg_resource_usg = AvgResourceUsage::init(SystemResource::Mem);
-                // let time_delta = TimeDelta::seconds(*time_seconds);
-                // user_selected_time = *time_seconds;
-                // let system_total_memory = sys.total_memory();
-                //
-                // let mut last_emit = Instant::now();
-                // let mut time_in_seconds_counter: u32 = 0;
-                //
-                // let mut total_mem_usage_in_bytes = 0;
-                // let mut total_hytale_mem_usage_in_bytes = 0;
-                // let mut counter = 0;
-                // while diff < time_delta {
-                //     // only refresh ram
-                //     sys.refresh_memory_specifics(
-                //         sysinfo::MemoryRefreshKind::everything().with_ram(),
-                //     );
-                //     end_time = Utc::now().time();
-                //     diff = end_time - start_time;
-                //     let curr_system_mem_in_bytes = sys.used_memory();
-                //     let curr_hytale_mem_in_bytes = get_mem_usage_from_pid(hytale_pid);
-                //     total_mem_usage_in_bytes += curr_system_mem_in_bytes;
-                //     total_hytale_mem_usage_in_bytes += curr_hytale_mem_in_bytes;
-                //     if last_emit.elapsed() >= Duration::from_secs(1) {
-                //         time_in_seconds_counter += 1;
-                //         let total_hytale_mem_in_gigabytes =
-                //             return_mem_in_gigabytes(total_hytale_mem_usage_in_bytes as f64);
-                //         let average_hytale_mem_usage_gb =
-                //             total_hytale_mem_in_gigabytes / counter as f64;
-                //         mem_avg_resource_usg.add_new_entry(
-                //             time_in_seconds_counter,
-                //             average_hytale_mem_usage_gb as f32,
-                //         );
-                //         last_emit += Duration::from_secs(1);
-                //     }
-                //     counter += 1;
-                // }
-                // let total_mem_in_gigabytes =
-                //     return_mem_in_gigabytes(total_mem_usage_in_bytes as f64);
-                // let total_hytale_mem_in_gigabytes =
-                //     return_mem_in_gigabytes(total_hytale_mem_usage_in_bytes as f64);
-                // let average_hytale_mem_usage_gb = total_hytale_mem_in_gigabytes / counter as f64;
-                //
-                // println!(
-                //     "Average mem usage of hytale over {} seconds is {:.2} gb.",
-                //     user_selected_time, average_hytale_mem_usage_gb
-                // );
-                // let average_system_mem_usage_gb = total_mem_in_gigabytes / counter as f64;
-                //
-                // println!(
-                //     "Average mem usage of entire system over {} seconds is {:.2} gb.",
-                //     user_selected_time, average_system_mem_usage_gb
-                // );
-                // let average_hytale_mem_usage = return_mem_usage(
-                //     total_hytale_mem_usage_in_bytes as f64 / counter as f64,
-                //     system_total_memory as f64,
-                // );
-                // println!(
-                //     "Average mem usage in percentage for hytale over {} seconds is {:.2}%",
-                //     user_selected_time, average_hytale_mem_usage
-                // );
-                // let average_system_mem_usage = return_mem_usage(
-                //     total_mem_usage_in_bytes as f64 / counter as f64,
-                //     system_total_memory as f64,
-                // );
-                // println!(
-                //     "Average mem usage in percentage for entire system over {} seconds is {:.2}%",
-                //     user_selected_time, average_system_mem_usage
-                // );
-                // println!(
-                //     "Average mem usage in percentage for entire system without hytale processes over {} seconds is {:.2}%",
-                //     user_selected_time,
-                //     average_system_mem_usage - average_hytale_mem_usage
-                // );
-                // if *output == OutputType::None {
-                // } else {
-                //     if let Err(err) = run(mem_avg_resource_usg) {
-                //         println!("{}", err);
-                //         process::exit(1);
-                //     }
-                // }
             }
         },
         Some(Commands::Pressure { pressure_type }) => match pressure_type {
@@ -866,8 +782,7 @@ fn return_avg_system_cpu_usage_and_hytale_cpu_usage(
         ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage) * 100.0
     );
     // another function to handle output type maybe?
-    if *output == OutputType::None {
-    } else {
+    if *output != OutputType::None {
         if let Err(err) = run(cpu_avg_resource_usg) {
             println!("{}", err);
             process::exit(1);
@@ -952,8 +867,7 @@ fn return_avg_system_mem_usage_and_hytale_mem_usage(
         user_selected_time,
         average_system_mem_usage - average_hytale_mem_usage
     );
-    if *output == OutputType::None {
-    } else {
+    if *output != OutputType::None {
         if let Err(err) = run(mem_avg_resource_usg) {
             println!("{}", err);
             process::exit(1);
