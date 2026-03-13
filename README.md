@@ -138,6 +138,8 @@ $ cargo run -- live
 
 This command will bring up a TUI where you can see live updates of your system memory and cpu usage as well as hytale's memory and cpu usage.
 
+TUI will now also present hytale logs when they happen. You can scroll through them using j for up navigation and k for down navigation.
+
 ## Demo
 [![asciicast](https://asciinema.org/a/dnez5bkkAUUySw6R.svg)](https://asciinema.org/a/dnez5bkkAUUySw6R)
 
@@ -159,4 +161,4 @@ We can go the concurrency route where we instantiate two threads, one thread to 
 If not concurrency, I looked into using journalctl. So once we get the cpu usage for those 5 seconds we just pass arguments to journalctl to show me Hytale's logs for the last 5 seconds and parse it from there
 
 ### AI ?
-Currently no AI generated code.
+Currently no AI generated code. Goal for this project is to provide code that I understand to you as a user.

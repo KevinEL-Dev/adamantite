@@ -7,6 +7,7 @@ use std::time::{Duration,Instant};
 use std::{error::Error};
 use std::process;
 use std::path::Path;
+use std::fmt::Display;
 use std::process::{Command, Stdio};
 use serde::Serialize;
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
@@ -19,7 +20,7 @@ use ratatui::{
     style::Stylize,
     symbols::border,
     text::{Line, Text},
-    widgets::{Block, Paragraph,Widget},
+    widgets::{Block, Paragraph,Widget,List, ListDirection, ListState,Scrollbar, ScrollbarOrientation,ScrollbarState},
     DefaultTerminal, Frame,
 };
 use ratatui::prelude::*;
@@ -29,6 +30,20 @@ const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
 
+#[derive(Debug)]
+enum CustomError{
+    NoJournalCtlOutput
+}
+impl Error for CustomError{}
+
+impl Display for CustomError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result{
+        let message = match self{
+            Self::NoJournalCtlOutput => "Error: No entry for journalctl",
+        };
+        write!(f,"Error: {message}")
+    }
+}
 /// Track system resources over time
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
@@ -102,12 +117,22 @@ pub struct App {
     hytale_cpu_usage: f32,
     system_mem_usage: f64,
     hytale_mem_usage: f64,
+    current_hytale_log: Vec<HytaleLog>,
+    current_hytale_log_strings: Vec<String>,
+    vertical_scroll: usize,
+    vertical: ScrollbarState,
+    state: ListState,
+    curr_index: i64,
     exit: bool,
 }
 impl App {
     pub fn run(&mut self, terminal: &mut DefaultTerminal,interval_ms: i64,sys: &mut System,hytale_pid: u32) -> io::Result<()>{
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
+        let mut state = ListState::default();
+        self.curr_index = 0;
+        let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(0);
+
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()){
                 sys.refresh_memory_specifics(
@@ -131,18 +156,30 @@ impl App {
                 let current_system_cpu_usage = (current_system_cpu_usage / total_available_cpu_percentage) * 100.0;
                 self.update_sys_cpu_usage(current_system_cpu_usage);
                 self.update_hytale_cpu_usage((hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0);
+                let hytale_log = get_hytale_logs();
+                let array_of_hytale_log = match get_test_journalctl_output(hytale_log){
+                    Ok(arr) => arr,
+                    Err(error) => [].to_vec() ,
+                };
                 self.update_sys_mem_usage(curr_system_mem_in_gigabytes);
                 self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
+                self.update_current_hytale_log(array_of_hytale_log);
+                self.convert_hytale_log_to_array_of_strings();
+                vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(self.curr_index.try_into().unwrap());
+                self.update_current_vertical(vertical);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
             }
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.draw(frame,&mut vertical,&mut state))?;
             if event::poll(Duration::from_millis(16))? {
-                self.handle_events()?;
+                self.handle_events(&mut state)?;
             }
         }
         Ok(())
     }
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&self, frame: &mut Frame,vertical: &mut ScrollbarState,state: &mut ListState) {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓"));
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -150,30 +187,63 @@ impl App {
                 Constraint::Percentage(50),
             ])
             .split(frame.area());
+        let inner_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Percentage(50),
+                Constraint::Percentage(50),
+            ])
+            .split(layout[1]);
+        let list_widget = List::new(self.current_hytale_log_strings.clone())
+        .block(Block::bordered().title("List"))
+        .style(Style::new().white())
+        .highlight_style(Style::new().italic())
+        .highlight_symbol(">>")
+        .repeat_highlight_symbol(true)
+        .direction(ListDirection::TopToBottom);
         frame.render_widget(self,layout[0]);
         frame.render_widget(
             BarChart::new([Bar::with_label("system cpu usage", self.system_cpu_usage as u64), Bar::with_label("hytale cpu usage", self.hytale_cpu_usage as u64),Bar::with_label("system mem usage", self.system_mem_usage as u64),Bar::with_label("hytale mem usage", self.hytale_mem_usage as u64)])
             .max(100)
             .block(Block::bordered().title("Live Chart"))
-            .bar_width(25)
-            .bar_style(Style::new().green())
+            .bar_width(25) .bar_style(Style::new().green())
             .value_style(Style::new().red().bold())
             .label_style(Style::new().white())
             .bar_gap(1),
-            layout[1]);
+            inner_layout[1]);
+        frame.render_stateful_widget(list_widget,inner_layout[0],state);
+        frame.render_stateful_widget(
+            scrollbar,
+            inner_layout[0].inner(Margin{
+                vertical: 1,
+                horizontal: 0,
+            }),
+            vertical,
+        );
     }
-    fn handle_events(&mut self) -> io::Result<()>{
+    fn handle_events(&mut self,state: &mut ListState) -> io::Result<()>{
         match event::read()? {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press =>{
-                self.handle_key_event(key_event)
+                self.handle_key_event(key_event,state)
             }
             _ => {}
         };
         Ok(())
     }
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
+    fn handle_key_event(&mut self, key_event: KeyEvent, state: &mut ListState) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
+            KeyCode::Char('j') => {
+                self.increment_current_scroll();
+                self.increment_current_index();
+                state.select(Some(self.curr_index.try_into().unwrap()));
+                
+            },
+            KeyCode::Char('k') => {
+                self.deincrement_current_scroll();
+                self.deincrement_current_index();
+                state.select(Some(self.curr_index.try_into().unwrap()));
+            },
             _ => {}
         }
     }
@@ -191,6 +261,45 @@ impl App {
     }
     fn update_hytale_mem_usage(&mut self,curr_hytale_mem_usage: f64){
         self.hytale_mem_usage = curr_hytale_mem_usage;
+    }
+    fn update_current_hytale_log(&mut self, curr_hytale_logs: Vec<HytaleLog>){
+        self.current_hytale_log = curr_hytale_logs;
+    }
+    fn convert_hytale_log_to_array_of_strings(&mut self ) {
+        for hytale_log in &self.current_hytale_log{
+            let local_time = Local::now();
+            let formatted_time = local_time.format("%Y-%m-%d %H:%M:%S").to_string();
+            let string_curr_sys_usage = String::from(" ") + "CPU: " + &self.hytale_cpu_usage.to_string() + "%" + " " + &formatted_time;
+
+            self.current_hytale_log_strings.push(hytale_log.who.clone() + &string_curr_sys_usage);
+        }
+    }
+    fn update_current_vertical(&mut self,new_vertical: ScrollbarState){
+        self.vertical = new_vertical;
+    }
+    fn deincrement_current_index(&mut self){
+        if self.curr_index > 0{
+            self.curr_index -= 1
+        }else{
+            self.curr_index = 0
+        }
+    }
+    fn increment_current_index(&mut self){
+        if self.curr_index < self.current_hytale_log_strings.len().try_into().unwrap(){
+            self.curr_index += 1
+        }
+    }
+    fn deincrement_current_scroll(&mut self){
+        if self.vertical_scroll > 0{
+            self.vertical_scroll -= 1
+        }else{
+            self.curr_index = 0
+        }
+    }
+    fn increment_current_scroll(&mut self){
+        if self.vertical_scroll < self.current_hytale_log_strings.len().try_into().unwrap(){
+            self.vertical_scroll += 1
+        }
     }
 }
 impl Widget for &App {
@@ -312,6 +421,57 @@ impl Pressure {
         }
     }
 }
+#[derive(Debug,Clone)]
+struct HytaleLog {
+    first_date: String,
+    host_name: String,
+    command_name: String,
+    time_of_log: String,
+    log_type: String,
+    info: String,
+    who: String,
+}
+impl HytaleLog {
+    fn init_log(one_log_line: Vec<&str>) -> Option<HytaleLog>{
+
+        if one_log_line.len() < 9{
+            // panic!("Invalid log line: {:?}",one_log_line);
+            return None;
+        }
+        // first_date will be month, day, time
+        let first_date_slice = &one_log_line[0..3];
+        let first_date: String = first_date_slice.join(" ");
+
+        // get host name
+        let host_name: String = one_log_line[3].to_string();
+
+        // disclaimer, this assumses that the command name is always start.sh
+        // let command_name_slice = &one_log_line[4][0..8];
+        // first ai line of code
+        let command_name = one_log_line[4].split('[').next().unwrap_or("").to_string();
+
+        let time_of_log_slice = &one_log_line[6..8];
+        let time_of_log: String = time_of_log_slice.join(" ");
+
+        let log_type: String = one_log_line[7].to_string();
+        
+        let who: String = one_log_line[8].to_string();
+
+        let info_slice = &one_log_line[9..];
+        let info: String = info_slice.join(" ");
+
+        Some(HytaleLog {
+            first_date,
+            host_name,
+            command_name,
+            time_of_log,
+            log_type,
+            info,
+            who,
+        })
+    }
+}
+// this will create a csv file
 fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     let mut file_path = "";
     match struct_avg.system_resource {
@@ -334,6 +494,7 @@ fn run (struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     wtr.flush()?;
     Ok(())
 }
+// this will run ratatui screen
 fn run_live(interval_ms: i64, sys: &mut System,hytale_pid: u32) -> io::Result<()> {
     ratatui::run(|terminal| App::default().run(terminal,interval_ms,sys,hytale_pid))
 }
@@ -349,10 +510,6 @@ fn main() {
     let num_of_cpus = sys.cpus().len();
     let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
-    /*let disks = Disks::new_with_refreshed_list();
-    for disk in disks.list() {
-        println!("[{:?}] {:?}", disk.name(), disk.usage());
-    }*/
     match &args.command {
         Some(Commands::Track {
             system_resource,
@@ -570,6 +727,18 @@ fn find_pid_of_hytale() -> u32 {
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
     return pid_from_s;
 }
+fn get_hytale_logs() -> String{
+    let journalctl_child = Command::new("/bin/journalctl")
+        .arg("-u")
+        // could depend on service name so maybe add config for this
+        .arg("hytale")
+        .arg("--since")
+        .arg("500ms ago")
+        .output()
+        .expect("failed to start journalctl");
+    let ps_out = String::from_utf8_lossy(&journalctl_child.stdout).to_string();
+    return ps_out;
+}
 fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     let mut s = System::new_all();
     std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
@@ -641,3 +810,56 @@ fn show_system_pressure(pressure_type: PressureType) {
         }
     }
 }
+// gets hytale logs and returns array of each hytale log line in a vec
+fn get_test_journalctl_output(journalctl_output: String )  -> Result<Vec<HytaleLog>,CustomError> {
+    let empty_journalctl_output: String = String::from("-- No entries --\n");
+    if journalctl_output == empty_journalctl_output{
+        return Err(CustomError::NoJournalCtlOutput);
+    }    
+    let line_of_logs: Vec<&str> = journalctl_output.lines().collect();
+
+    let mut logs_white_space: Vec<Vec<&str>> = Vec::new();
+
+    let mut log_structs: Vec<HytaleLog> = Vec::new();
+
+    for line in line_of_logs{
+        logs_white_space.push(line.split_whitespace().collect());
+    }
+
+    // only push log that is parsable
+    for split_line in logs_white_space{
+        match HytaleLog::init_log(split_line){
+            Some(log) => {
+                log_structs.push(log)
+            }
+            None => {}
+        }
+    }
+
+    return Ok(log_structs);
+}
+// maybe use this code for testing parsing
+// fn get_test_journalctl_output()  -> Vec<HytaleLog> {
+//     let path_to_test_output = Path::new("./journalctl_output.txt");
+//
+//     let mut f = File::open(path_to_test_output).expect("failed to open journalctl_output.txt file");
+//     let mut content_test_output = String::new();
+//     f.read_to_string(&mut content_test_output)
+//         .expect("failed to read the file");
+//
+//     let line_of_logs: Vec<&str> = content_test_output.lines().collect();
+//
+//     let mut logs_white_space: Vec<Vec<&str>> = Vec::new();
+//
+//     let mut log_structs: Vec<HytaleLog> = Vec::new();
+//
+//     for line in line_of_logs{
+//         logs_white_space.push(line.split_whitespace().collect());
+//     }
+//
+//     for split_line in logs_white_space{
+//         log_structs.push(HytaleLog::init_log(split_line));
+//     }
+//
+//     return log_structs;
+// }
