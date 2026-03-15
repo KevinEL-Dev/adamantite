@@ -124,7 +124,6 @@ pub struct App {
     current_hytale_log_strings: Vec<String>,
     vertical_scroll: usize,
     vertical: ScrollbarState,
-    state: ListState,
     curr_index: i64,
     exit: bool,
 }
@@ -314,7 +313,7 @@ impl App {
         }
     }
     fn increment_current_scroll(&mut self) {
-        if self.vertical_scroll < self.current_hytale_log_strings.len().try_into().unwrap() {
+        if self.vertical_scroll < self.current_hytale_log_strings.len() {
             self.vertical_scroll += 1
         }
     }
@@ -380,11 +379,10 @@ impl Pressure {
         let mut map_some: HashMap<String, f64> = HashMap::new();
         let mut map_full: HashMap<String, f64> = HashMap::new();
 
-        let mut split_test_arg: Vec<&str> = some[1].split("=").collect();
         for arg in some.iter().skip(1) {
             /* first value is avg then percentage*/
             /* so set first value to string name and second to f64 by parsing the string into f64*/
-            split_test_arg = arg.split("=").collect();
+            let split_test_arg: Vec<&str> = arg.split("=").collect();
             let avg_second = split_test_arg[0];
             let avg_percentage: f64 = split_test_arg[1]
                 .parse::<f64>()
@@ -392,11 +390,10 @@ impl Pressure {
             /* insert avg_second and avg_percentage as keys into some hashmap and then full hashmap*/
             map_some.insert(avg_second.to_string(), avg_percentage);
         }
-        let mut split_test_arg: Vec<&str> = full[1].split("=").collect();
         for arg in full.iter().skip(1) {
             /* first value is avgethen percentage*/
             /* so set first value to string name and second to f64 by parsing the string into f64*/
-            split_test_arg = arg.split("=").collect();
+            let split_test_arg: Vec<&str> = arg.split("=").collect();
             let avg_second = split_test_arg[0];
             let avg_percentage: f64 = split_test_arg[1]
                 .parse::<f64>()
@@ -531,7 +528,6 @@ fn main() {
                     hytale_pid,
                     output,
                 );
-                return;
             }
             SystemResource::Mem => {
                 return_avg_system_mem_usage_and_hytale_mem_usage(
@@ -540,7 +536,6 @@ fn main() {
                     hytale_pid,
                     output,
                 );
-                return;
             }
         },
         Some(Commands::Pressure { pressure_type }) => match pressure_type {
@@ -608,7 +603,7 @@ fn find_pid_of_hytale() -> u32 {
         .expect("failed to wait for awk");
     let s = String::from_utf8_lossy(&output.stdout).to_string();
     let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
-    return pid_from_s;
+    pid_from_s
 }
 fn get_hytale_logs() -> String {
     let journalctl_child = Command::new("/bin/journalctl")
