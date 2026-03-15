@@ -563,37 +563,45 @@ fn main() {
     }
 }
 fn find_pid_of_hytale() -> u32 {
-    let ps_child = Command::new("/bin/ps")
+    let mut ps_child = Command::new("/bin/ps")
         .arg("aux")
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to start ps");
+    ps_child.wait().expect("failed to wait on ps");
     let ps_out = ps_child.stdout.expect("failed to start echo process");
 
-    let grep_child = Command::new("/bin/grep")
+    let mut grep_child = Command::new("/bin/grep")
         .arg("java -jar HytaleServer.jar --assets ../Assets.zip --backup --backup-dir backups --backup-frequency 30")
         .stdin(Stdio::from(ps_out))
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed te start grep process");
 
+    grep_child.wait().expect("failed to wait on child");
+
     let grep_output = grep_child.stdout.expect("failed to get grep output");
 
-    let head_child = Command::new("/bin/head")
+    let mut head_child = Command::new("/bin/head")
         .arg("-n")
         .arg("1")
         .stdin(Stdio::from(grep_output))
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to start the head process");
+
+    head_child.wait().expect("failed to wait on head child");
+
     let head_output = head_child.stdout.expect("failed to get head output");
 
-    let awk_child = Command::new("/bin/awk")
+    let mut awk_child = Command::new("/bin/awk")
         .arg("{print $2}")
         .stdin(Stdio::from(head_output))
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to start awk process");
+
+    awk_child.wait().expect("failed to wait on awk child");
 
     let output = awk_child
         .wait_with_output()
@@ -611,8 +619,7 @@ fn get_hytale_logs() -> String {
         .arg("500ms ago")
         .output()
         .expect("failed to start journalctl");
-    let ps_out = String::from_utf8_lossy(&journalctl_child.stdout).to_string();
-    return ps_out;
+    String::from_utf8_lossy(&journalctl_child.stdout).to_string()
 }
 fn get_cpu_usage_from_pid(pid: u32) -> f32 {
     let mut s = System::new_all();
@@ -623,17 +630,17 @@ fn get_cpu_usage_from_pid(pid: u32) -> f32 {
         ProcessRefreshKind::nothing().with_cpu(),
     );
     let mut total_cpu_usage: f32 = 0.0;
-    if let Some(process) = s.process(Pid::from_u32(pid)) {
-        if let Some(tasks) = process.tasks() {
-            for task_pid in tasks {
-                if let Some(task) = s.process(*task_pid) {
-                    let curr_cpu_usage = task.cpu_usage();
-                    total_cpu_usage += curr_cpu_usage;
-                }
+    if let Some(process) = s.process(Pid::from_u32(pid))
+        && let Some(tasks) = process.tasks()
+    {
+        for task_pid in tasks {
+            if let Some(task) = s.process(*task_pid) {
+                let curr_cpu_usage = task.cpu_usage();
+                total_cpu_usage += curr_cpu_usage;
             }
         }
     }
-    return total_cpu_usage;
+    total_cpu_usage
 }
 fn get_mem_usage_from_pid(pid: u32) -> u64 {
     let s = System::new_all();
@@ -641,7 +648,7 @@ fn get_mem_usage_from_pid(pid: u32) -> u64 {
     if let Some(process) = s.process(Pid::from_u32(pid)) {
         pid_mem_usage = process.memory();
     }
-    return pid_mem_usage;
+    pid_mem_usage
 }
 fn return_mem_in_gigabytes(mem_in_bytes: f64) -> f64 {
     let kb: u64 = 1000;
@@ -703,13 +710,12 @@ fn get_test_journalctl_output(journalctl_output: String) -> Result<Vec<HytaleLog
 
     // only push log that is parsable
     for split_line in logs_white_space {
-        match HytaleLog::init_log(split_line) {
-            Some(log) => log_structs.push(log),
-            None => {}
+        if let Some(log) = HytaleLog::init_log(split_line) {
+            log_structs.push(log)
         }
     }
 
-    return Ok(log_structs);
+    Ok(log_structs)
 }
 fn return_avg_system_cpu_usage_and_hytale_cpu_usage(
     num_of_cpus: f32,
@@ -782,11 +788,11 @@ fn return_avg_system_cpu_usage_and_hytale_cpu_usage(
         ((hytale_total_cpu_usage / counter as f32) / total_available_cpu_percentage) * 100.0
     );
     // another function to handle output type maybe?
-    if *output != OutputType::None {
-        if let Err(err) = run(cpu_avg_resource_usg) {
-            println!("{}", err);
-            process::exit(1);
-        }
+    if *output != OutputType::None
+        && let Err(err) = run(cpu_avg_resource_usg)
+    {
+        println!("{}", err);
+        process::exit(1);
     }
 }
 fn return_avg_system_mem_usage_and_hytale_mem_usage(
@@ -867,11 +873,11 @@ fn return_avg_system_mem_usage_and_hytale_mem_usage(
         user_selected_time,
         average_system_mem_usage - average_hytale_mem_usage
     );
-    if *output != OutputType::None {
-        if let Err(err) = run(mem_avg_resource_usg) {
-            println!("{}", err);
-            process::exit(1);
-        }
+    if *output != OutputType::None
+        && let Err(err) = run(mem_avg_resource_usg)
+    {
+        println!("{}", err);
+        process::exit(1);
     }
 }
 // maybe use this code for testing parsing
