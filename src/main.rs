@@ -1,5 +1,5 @@
 use chrono::{TimeDelta, prelude::*};
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum, error};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::error::Error;
@@ -167,8 +167,8 @@ impl App {
                 );
                 let hytale_log = get_hytale_logs();
                 let array_of_hytale_log = match get_test_journalctl_output(hytale_log) {
-                    Ok(arr) => arr,
-                    Err(error) => [].to_vec(),
+                    Some(arr) => arr,
+                    None => [].to_vec(),
                 };
                 self.update_sys_mem_usage(curr_system_mem_in_gigabytes);
                 self.update_hytale_mem_usage(curr_hytale_mem_in_gigabytes);
@@ -540,10 +540,16 @@ fn main() {
         },
         Some(Commands::Pressure { pressure_type }) => match pressure_type {
             PressureType::Io => {
-                show_system_pressure(PressureType::Io);
+                if let Err(err) = show_system_pressure(PressureType::Io) {
+                    println!("{}", err);
+                    process::exit(1);
+                }
             }
             PressureType::Mem => {
-                show_system_pressure(PressureType::Mem);
+                if let Err(err) = show_system_pressure(PressureType::Mem) {
+                    println!("{}", err);
+                    process::exit(1);
+                }
             }
         },
         Some(Commands::Live { interval_ms }) => {
@@ -653,19 +659,16 @@ fn return_mem_in_gigabytes(mem_in_bytes: f64) -> f64 {
 fn return_mem_usage(mem_in_bytes: f64, system_total_mem_in_bytes: f64) -> f64 {
     (mem_in_bytes / system_total_mem_in_bytes) * 100.0
 }
-fn show_system_pressure(pressure_type: PressureType) {
+fn show_system_pressure(pressure_type: PressureType) -> Result<(), io::Error> {
     let path_to_psi_io = Path::new("/proc/pressure/io");
     let path_to_psi_mem = Path::new("/proc/pressure/memory");
 
-    let mut f = File::open(path_to_psi_io).expect("failed to open this file");
+    let mut f = File::open(path_to_psi_io)?;
     let mut content_io = String::new();
-    f.read_to_string(&mut content_io)
-        .expect("failed to read the file");
-    let mut f_memory = File::open(path_to_psi_mem).expect("failed to open file memory");
+    f.read_to_string(&mut content_io)?;
+    let mut f_memory = File::open(path_to_psi_mem)?;
     let mut content_memory = String::new();
-    f_memory
-        .read_to_string(&mut content_memory)
-        .expect("failed to read file memory");
+    f_memory.read_to_string(&mut content_memory)?;
 
     let v_f: Vec<&str> = content_io.lines().collect();
     let v_f_some: Vec<&str> = v_f[0].split_whitespace().collect();
@@ -679,19 +682,21 @@ fn show_system_pressure(pressure_type: PressureType) {
         PressureType::Io => {
             let pressure_example = Pressure::build_pressure(v_f_some, v_f_full, PressureType::Io);
             pressure_example.evaluate_pressure();
+            Ok(())
         }
         PressureType::Mem => {
             let pressure_example =
                 Pressure::build_pressure(v_f_mem_some, v_f_mem_full, PressureType::Mem);
             pressure_example.evaluate_pressure();
+            Ok(())
         }
     }
 }
 // gets hytale logs and returns array of each hytale log line in a vec
-fn get_test_journalctl_output(journalctl_output: String) -> Result<Vec<HytaleLog>, CustomError> {
+fn get_test_journalctl_output(journalctl_output: String) -> Option<Vec<HytaleLog>> {
     let empty_journalctl_output: String = String::from("-- No entries --\n");
     if journalctl_output == empty_journalctl_output {
-        return Err(CustomError::NoJournalCtlOutput);
+        return None;
     }
     let line_of_logs: Vec<&str> = journalctl_output.lines().collect();
 
@@ -710,7 +715,7 @@ fn get_test_journalctl_output(journalctl_output: String) -> Result<Vec<HytaleLog
         }
     }
 
-    Ok(log_structs)
+    Some(log_structs)
 }
 fn return_avg_system_cpu_usage_and_hytale_cpu_usage(
     num_of_cpus: f32,
