@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 use std::fs::File;
+use std::fs;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
@@ -13,6 +14,7 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
+use directories::ProjectDirs;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::prelude::*;
 use ratatui::style::Style;
@@ -32,7 +34,6 @@ use ratatui::{
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
-
 #[derive(Debug)]
 enum CustomError {
     NoJournalCtlOutput,
@@ -509,6 +510,20 @@ fn run_live(interval_ms: i64, sys: &mut System, hytale_pid: u32) -> io::Result<(
 fn main() {
     // parges user input
     let args = Cli::parse();
+    // check if we have a config
+    if let Some(res) = check_if_config_dir_exist("adamantite".to_string()){
+        if !res 
+            && let Some(data_path) = return_config_dir("adamantite".to_string())
+            && let Err(err) = create_dir_for_cli(data_path)
+            // assuming that we dont have a config directory, we should prompt user for generating a
+        // config
+        {
+            eprint!(
+                "Something went wrong with creating config dir for adamantite. Err: {err}"
+            )
+        }
+
+    }
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
@@ -874,6 +889,22 @@ fn return_avg_system_mem_usage_and_hytale_mem_usage(
         println!("{}", err);
         process::exit(1);
     }
+}
+fn check_if_config_dir_exist(app_name: String) -> Option<bool> {
+    if let Some(proj_dir) = ProjectDirs::from("", "", &app_name) {
+        return Some(fs::metadata(proj_dir.config_dir()).is_ok());
+    }
+    None
+}
+fn return_config_dir(app_name: String) -> Option<String> {
+    if let Some(proj_dir) = ProjectDirs::from("","",&app_name) {
+        return Some(proj_dir.config_dir().to_str()?.to_string());
+    }
+    None
+}
+fn create_dir_for_cli(dir_path: String) -> std::io::Result<()> {
+    fs::create_dir(dir_path)?;
+    Ok(())
 }
 // maybe use this code for testing parsing
 // fn get_test_journalctl_output()  -> Vec<HytaleLog> {

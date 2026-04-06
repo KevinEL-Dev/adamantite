@@ -16,3 +16,4 @@ csv = "1.4.0"
 serde = {version = "1", features = ["derive"]}
 ratatui = "0.30.0"
 crossterm = "0.29.0"
+directories = "6.0.0"
