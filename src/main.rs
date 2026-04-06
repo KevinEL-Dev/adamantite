@@ -14,6 +14,8 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
+use config::Config;
+
 use directories::ProjectDirs;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::prelude::*;
@@ -528,6 +530,22 @@ fn main() {
         process::exit(1)
     }
 
+    // now we check for simple configuration
+    let data_path = return_config_dir("adamantite".to_string()).unwrap();
+
+    let full_path = data_path + "config";
+    let settings = Config::builder()
+        // add in `~/.config/adamantite.toml`
+        .add_source(config::File::with_name(&full_path))
+        .build()
+        .unwrap();
+
+    println!(
+    "{:?}",
+        settings
+            .try_deserialize::<HashMap<String, String>>()
+            .unwrap()
+    );
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
