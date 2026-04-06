@@ -533,9 +533,9 @@ fn main() {
     // now we check for simple configuration
     let data_path = return_config_dir("adamantite".to_string()).unwrap();
 
-    let full_path = data_path + "config";
+    let full_path = data_path + "/config";
     let settings = Config::builder()
-        // add in `~/.config/adamantite.toml`
+        // add in `~/.config/adamantite/config.toml`
         .add_source(config::File::with_name(&full_path))
         .build()
         .unwrap();
