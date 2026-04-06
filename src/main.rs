@@ -523,7 +523,11 @@ fn main() {
             )
         }
 
+    }else{
+        println!("something went wrong in fetching xdg directories");
+        process::exit(1)
     }
+
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
