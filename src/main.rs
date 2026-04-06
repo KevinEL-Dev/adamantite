@@ -1,17 +1,15 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::{Parser, Subcommand, ValueEnum};
-use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 use std::fs::File;
-use std::fs;
 use std::io;
 use std::io::prelude::*;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
@@ -53,24 +51,6 @@ impl Display for CustomError {
 #[derive(Parser)]
 #[command(version, about, long_about= None)]
 struct Cli {
-    /// Path to config file (default: ~/.config/adamantite/config.toml)
-    #[arg(long)]
-    config: Option<String>,
-    /// Do not load config file
-    #[arg(long, default_value_t = false)]
-    no_config: bool,
-    /// Systemd unit name (overrides config)
-    #[arg(long)]
-    unit: Option<String>,
-    /// PID file path (overrides config)
-    #[arg(long)]
-    pidfile: Option<String>,
-    /// Process regex to match ps output (overrides config)
-    #[arg(long)]
-    process_regex: Option<String>,
-    /// Preferred detection method (overrides config)
-    #[arg(long, value_enum)]
-    prefer: Option<Prefer>,
     #[command[subcommand]]
     command: Option<Commands>,
 }
@@ -95,16 +75,6 @@ enum OutputType {
     Csv,
     /// Default output type is None
     None,
-}
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-enum Prefer {
-    /// Prefer systemd unit detection
-    Systemd,
-    /// Prefer pidfile detection
-    Pidfile,
-    /// Prefer process regex detection
-    Regex,
 }
 #[derive(Subcommand)]
 enum Commands {
@@ -164,7 +134,6 @@ impl App {
         interval_ms: i64,
         sys: &mut System,
         hytale_pid: u32,
-        hytale_unit: Option<&str>,
     ) -> io::Result<()> {
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
@@ -196,7 +165,7 @@ impl App {
                 self.update_hytale_cpu_usage(
                     (hytale_curr_cpu_usage / total_available_cpu_percentage) * 100.0,
                 );
-                let hytale_log = get_hytale_logs(hytale_unit);
+                let hytale_log = get_hytale_logs();
                 let array_of_hytale_log = match get_test_journalctl_output(hytale_log) {
                     Ok(arr) => arr,
                     Err(error) => [].to_vec(),
@@ -471,20 +440,6 @@ struct HytaleLog {
     info: String,
     who: String,
 }
-#[derive(Debug, Deserialize, Default)]
-struct ConfigFile {
-    unit: Option<String>,
-    pidfile: Option<String>,
-    process_regex: Option<String>,
-    prefer: Option<Prefer>,
-}
-#[derive(Debug)]
-struct EffectiveConfig {
-    unit: Option<String>,
-    pidfile: Option<String>,
-    process_regex: Option<String>,
-    prefer: Option<Prefer>,
-}
 impl HytaleLog {
     fn init_log(one_log_line: Vec<&str>) -> Option<HytaleLog> {
         if one_log_line.len() < 9 {
@@ -548,37 +503,17 @@ fn run(struct_avg: AvgResourceUsage) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 // this will run ratatui screen
-fn run_live(
-    interval_ms: i64,
-    sys: &mut System,
-    hytale_pid: u32,
-    hytale_unit: Option<&str>,
-) -> io::Result<()> {
-    ratatui::run(|terminal| App::default().run(terminal, interval_ms, sys, hytale_pid, hytale_unit))
+fn run_live(interval_ms: i64, sys: &mut System, hytale_pid: u32) -> io::Result<()> {
+    ratatui::run(|terminal| App::default().run(terminal, interval_ms, sys, hytale_pid))
 }
 fn main() {
     // parges user input
     let args = Cli::parse();
-    let config_file = match load_config_from_cli(&args) {
-        Ok(cfg) => cfg,
-        Err(err) => {
-            eprintln!("{err}");
-            process::exit(1);
-        }
-    };
-    let effective_config = build_effective_config(&args, config_file);
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
-    let hytale_pid = match resolve_hytale_pid(&effective_config) {
-        Ok(pid) => pid,
-        Err(err) => {
-            eprintln!("{err}");
-            process::exit(1);
-        }
-    };
+    let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
-    let hytale_unit = effective_config.unit.as_deref();
     match &args.command {
         Some(Commands::Track {
             system_resource,
@@ -612,7 +547,7 @@ fn main() {
             }
         },
         Some(Commands::Live { interval_ms }) => {
-            if let Err(err) = run_live(*interval_ms as i64, &mut sys, hytale_pid, hytale_unit) {
+            if let Err(err) = run_live(*interval_ms as i64, &mut sys, hytale_pid) {
                 println!("{}", err);
                 process::exit(1);
             }
@@ -622,175 +557,59 @@ fn main() {
         }
     }
 }
-fn default_config_path() -> Result<PathBuf, Box<dyn Error>> {
-    let home = std::env::var("HOME")
-        .map_err(|_| "HOME is not set; use --config to specify a config file")?;
-    Ok(Path::new(&home)
-        .join(".config")
-        .join("adamantite")
-        .join("config.toml"))
-}
-fn load_config_from_cli(args: &Cli) -> Result<Option<ConfigFile>, Box<dyn Error>> {
-    if args.no_config {
-        return Ok(None);
-    }
-    let config_path = match &args.config {
-        Some(path) => PathBuf::from(path),
-        None => default_config_path()?,
-    };
-    if !config_path.exists() {
-        return Err(format!(
-            "Config not found at {}. Provide one with --config or pass --no-config to skip.",
-            config_path.display()
-        )
-        .into());
-    }
-    let content = fs::read_to_string(&config_path)?;
-    let config: ConfigFile = toml::from_str(&content)?;
-    Ok(Some(config))
-}
-fn build_effective_config(args: &Cli, config: Option<ConfigFile>) -> EffectiveConfig {
-    let config = config.unwrap_or_default();
-    EffectiveConfig {
-        unit: args.unit.clone().or(config.unit),
-        pidfile: args.pidfile.clone().or(config.pidfile),
-        process_regex: args.process_regex.clone().or(config.process_regex),
-        prefer: args.prefer.or(config.prefer),
-    }
-}
-fn resolve_hytale_pid(config: &EffectiveConfig) -> Result<u32, Box<dyn Error>> {
-    if config.unit.is_none() && config.pidfile.is_none() && config.process_regex.is_none() {
-        return Err(
-            "No detection config provided. Set unit, pidfile, or process_regex in config or CLI."
-                .into(),
-        );
-    }
+fn find_pid_of_hytale() -> u32 {
+    let mut ps_child = Command::new("/bin/ps")
+        .arg("aux")
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start ps");
+    ps_child.wait().expect("failed to wait on ps");
+    let ps_out = ps_child.stdout.expect("failed to start echo process");
 
-    let mut errors: Vec<String> = Vec::new();
-    let mut tried: Vec<Prefer> = Vec::new();
+    let mut grep_child = Command::new("/bin/grep")
+        .arg("java -jar HytaleServer.jar --assets ../Assets.zip --backup --backup-dir backups --backup-frequency 30")
+        .stdin(Stdio::from(ps_out))
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed te start grep process");
 
-    if let Some(prefer) = config.prefer {
-        if let Some(pid) = try_detect_by(prefer, config, &mut errors) {
-            return Ok(pid);
-        }
-        tried.push(prefer);
-    }
+    grep_child.wait().expect("failed to wait on child");
 
-    for method in [Prefer::Systemd, Prefer::Pidfile, Prefer::Regex] {
-        if tried.contains(&method) {
-            continue;
-        }
-        if let Some(pid) = try_detect_by(method, config, &mut errors) {
-            return Ok(pid);
-        }
-    }
+    let grep_output = grep_child.stdout.expect("failed to get grep output");
 
-    let mut message = String::from("Failed to resolve Hytale PID:");
-    for err in errors {
-        message.push_str(&format!("\n- {err}"));
-    }
-    Err(message.into())
+    let mut head_child = Command::new("/bin/head")
+        .arg("-n")
+        .arg("1")
+        .stdin(Stdio::from(grep_output))
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start the head process");
+
+    head_child.wait().expect("failed to wait on head child");
+
+    let head_output = head_child.stdout.expect("failed to get head output");
+
+    let mut awk_child = Command::new("/bin/awk")
+        .arg("{print $2}")
+        .stdin(Stdio::from(head_output))
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start awk process");
+
+    awk_child.wait().expect("failed to wait on awk child");
+
+    let output = awk_child
+        .wait_with_output()
+        .expect("failed to wait for awk");
+    let s = String::from_utf8_lossy(&output.stdout).to_string();
+    let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
+    pid_from_s
 }
-fn try_detect_by(
-    method: Prefer,
-    config: &EffectiveConfig,
-    errors: &mut Vec<String>,
-) -> Option<u32> {
-    match method {
-        Prefer::Systemd => match &config.unit {
-            Some(unit) => match pid_from_systemd_unit(unit) {
-                Ok(pid) => Some(pid),
-                Err(err) => {
-                    errors.push(format!("systemd unit `{unit}` failed: {err}"));
-                    None
-                }
-            },
-            None => {
-                errors.push("systemd unit not configured".to_string());
-                None
-            }
-        },
-        Prefer::Pidfile => match &config.pidfile {
-            Some(pidfile) => match pid_from_pidfile(pidfile) {
-                Ok(pid) => Some(pid),
-                Err(err) => {
-                    errors.push(format!("pidfile `{pidfile}` failed: {err}"));
-                    None
-                }
-            },
-            None => {
-                errors.push("pidfile not configured".to_string());
-                None
-            }
-        },
-        Prefer::Regex => match &config.process_regex {
-            Some(pattern) => match pid_from_process_regex(pattern) {
-                Ok(pid) => Some(pid),
-                Err(err) => {
-                    errors.push(format!("process_regex `{pattern}` failed: {err}"));
-                    None
-                }
-            },
-            None => {
-                errors.push("process_regex not configured".to_string());
-                None
-            }
-        },
-    }
-}
-fn pid_from_systemd_unit(unit: &str) -> Result<u32, Box<dyn Error>> {
-    let output = Command::new("/bin/systemctl")
-        .arg("show")
-        .arg("-p")
-        .arg("MainPID")
-        .arg("--value")
-        .arg(unit)
-        .output()?;
-    if !output.status.success() {
-        return Err("systemctl show returned non-zero status".into());
-    }
-    let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if value.is_empty() {
-        return Err("MainPID was empty".into());
-    }
-    let pid: u32 = value.parse()?;
-    if pid == 0 {
-        return Err("MainPID was 0 (inactive)".into());
-    }
-    Ok(pid)
-}
-fn pid_from_pidfile(pidfile: &str) -> Result<u32, Box<dyn Error>> {
-    let content = fs::read_to_string(pidfile)?;
-    let pid: u32 = content.trim().parse()?;
-    Ok(pid)
-}
-fn pid_from_process_regex(pattern: &str) -> Result<u32, Box<dyn Error>> {
-    let re = Regex::new(pattern)?;
-    let output = Command::new("/bin/ps").arg("aux").output()?;
-    if !output.status.success() {
-        return Err("ps aux returned non-zero status".into());
-    }
-    let content = String::from_utf8_lossy(&output.stdout);
-    for line in content.lines() {
-        if line.starts_with("USER ") {
-            continue;
-        }
-        if re.is_match(line) {
-            let mut parts = line.split_whitespace();
-            let _user = parts.next();
-            if let Some(pid_field) = parts.next() {
-                let pid: u32 = pid_field.parse()?;
-                return Ok(pid);
-            }
-        }
-    }
-    Err("no matching process found".into())
-}
-fn get_hytale_logs(hytale_unit: Option<&str>) -> String {
-    let unit = hytale_unit.unwrap_or("hytale");
+fn get_hytale_logs() -> String {
     let journalctl_child = Command::new("/bin/journalctl")
         .arg("-u")
-        .arg(unit)
+        // could depend on service name so maybe add config for this
+        .arg("hytale")
         .arg("--since")
         .arg("500ms ago")
         .output()
