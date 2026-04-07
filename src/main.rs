@@ -542,13 +542,13 @@ fn main() {
 
     let table = settings.get_table("search_method").unwrap();
     let other_table = settings.get_table("server").unwrap();
-    println!(
-    "{:?}",
-        table
-    );
+    // println!(
+    // "{:?}",
+    //     table
+    // );
     let service_method = table.get("method").unwrap();
     let service_name = table.get("service_name").unwrap();
-    println!("method: {:?} and service_name{:?}",service_method,service_name);
+    println!("method: {:?}\n and service_name{:?}",service_method,service_name);
     // allow user to set to search via systemd
     // [search-method]
     // # this systemd is default, hytale is default service name
