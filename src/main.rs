@@ -546,8 +546,8 @@ fn main() {
     "{:?}",
         table
     );
-    let service_method: String = settings.get("method").unwrap();
-    let service_name: String = settings.get("service_name").unwrap();
+    let service_method = table.get("method").unwrap();
+    let service_name = table.get("service_name").unwrap();
     println!("method: {:?} and service_name{:?}",service_method,service_name);
     // allow user to set to search via systemd
     // [search-method]
