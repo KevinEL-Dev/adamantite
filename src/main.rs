@@ -546,6 +546,9 @@ fn main() {
     "{:?}",
         table
     );
+    let service_method: String = settings.get("method").unwrap();
+    let service_name: String = settings.get("service_name").unwrap();
+    println!("method: {:?} and service_name{:?}",service_method,service_name);
     // allow user to set to search via systemd
     // [search-method]
     // # this systemd is default, hytale is default service name
@@ -602,9 +605,6 @@ fn main() {
 }
 fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
     // check which settings have been set
-    let service_method = settings.get("method").unwrap();
-    let service_name = settings.get("service_name").unwrap();
-    println!("method: {:?} and service_name{:?}",service_method,service_name);
     let mut ps_child = Command::new("/bin/ps")
         .arg("aux")
         .stdout(Stdio::piped())
