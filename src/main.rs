@@ -559,11 +559,7 @@ fn main() {
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
-    let hytale_pid = find_pid_of_hytale(
-        settings.clone()
-            .try_deserialize::<HashMap<String, String>>()
-            .unwrap()
-);
+    let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
     match &args.command {
         Some(Commands::Track {
@@ -608,7 +604,7 @@ fn main() {
         }
     }
 }
-fn find_pid_of_hytale(settings: HashMap<String,String>) -> u32 {
+fn find_pid_of_hytale(_settings: HashMap<String,String>) -> u32 {
     // check which settings have been set
     //
     let mut ps_child = Command::new("/bin/ps")
