@@ -550,13 +550,6 @@ fn main() {
     "{:?}",
         other_table
     );
-    println!(
-    "{:?}",
-        settings.clone()
-            .try_deserialize::<HashMap<String, String>>()
-            .unwrap()
-    );
-
     // allow user to set to search via systemd
     // [search-method]
     // # this systemd is default, hytale is default service name
