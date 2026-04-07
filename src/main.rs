@@ -604,7 +604,7 @@ fn main() {
         }
     }
 }
-fn find_pid_of_hytale(_settings: HashMap<String,String>) -> u32 {
+fn find_pid_of_hytale() -> u32 {
     // check which settings have been set
     //
     let mut ps_child = Command::new("/bin/ps")
