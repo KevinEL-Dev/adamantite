@@ -540,8 +540,8 @@ fn main() {
         .build()
         .unwrap();
 
-    let table = settings.get_table("search_method");
-    let other_table = settings.get_table("server");
+    let table = settings.get_table("search_method").unwrap();
+    let other_table = settings.get_table("server").unwrap();
     println!(
     "{:?}",
         table
