@@ -14,7 +14,7 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
-use config::Config;
+use config::{Map,Value,Config};
 
 use directories::ProjectDirs;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -546,10 +546,6 @@ fn main() {
     "{:?}",
         table
     );
-    println!(
-    "{:?}",
-        other_table
-    );
     // allow user to set to search via systemd
     // [search-method]
     // # this systemd is default, hytale is default service name
@@ -559,7 +555,7 @@ fn main() {
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
-    let hytale_pid = find_pid_of_hytale();
+    let hytale_pid = find_pid_of_hytale(table);
     let num_of_cpus = num_of_cpus as f32;
     match &args.command {
         Some(Commands::Track {
@@ -604,9 +600,11 @@ fn main() {
         }
     }
 }
-fn find_pid_of_hytale() -> u32 {
+fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
     // check which settings have been set
-    //
+    let service_method = settings.get("method").unwrap();
+    let service_name = settings.get("service_name").unwrap();
+    println!("method: {:?} and service_name{:?}",service_method,service_name);
     let mut ps_child = Command::new("/bin/ps")
         .arg("aux")
         .stdout(Stdio::piped())
