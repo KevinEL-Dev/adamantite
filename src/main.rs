@@ -540,6 +540,11 @@ fn main() {
         .build()
         .unwrap();
 
+    let table = settings.get_table("search_method");
+    println!(
+    "{:?}",
+        table
+    );
     println!(
     "{:?}",
         settings.clone()
