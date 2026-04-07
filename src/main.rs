@@ -541,9 +541,14 @@ fn main() {
         .unwrap();
 
     let table = settings.get_table("search_method");
+    let other_table = settings.get_table("server");
     println!(
     "{:?}",
         table
+    );
+    println!(
+    "{:?}",
+        other_table
     );
     println!(
     "{:?}",
