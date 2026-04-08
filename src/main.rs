@@ -626,6 +626,7 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
                 .arg("-u")
                 .arg(name)
                 .arg("--no-pager")
+                .stdout(Stdio::piped())
                 .spawn()
                 .expect("failed to start systemd");
             systemd_cgls_child.wait().expect("failed to wain on systemd");
