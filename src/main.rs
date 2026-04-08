@@ -629,9 +629,25 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
                 .stdout(Stdio::piped())
                 .spawn()
                 .expect("failed to start systemd");
-            let output = systemd_cgls_child.wait_with_output().expect("failed to wain on systemd");
-            let soutput = String::from_utf8_lossy(&output.stdout).to_string();
-            println!("systemd output\n{}",soutput );
+            systemd_cgls_child.wait().expect("failed to wait on ps");
+            let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
+            // let output = systemd_cgls_child.wait_with_output().expect("failed to wain on systemd");
+            // let soutput = String::from_utf8_lossy(&output.stdout).to_string();
+            // println!("systemd output\n{}",soutput );
+    let mut awk_child = Command::new("/bin/awk")
+        .arg("END {print $1}")
+        .stdin(Stdio::from(systemd_cgls_out))
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to start awk process");
+
+    awk_child.wait().expect("failed to wait on awk child");
+
+        let output = awk_child
+            .wait_with_output()
+            .expect("failed to wait for awk");
+        let s = String::from_utf8_lossy(&output.stdout).to_string();
+            println!("pid: {}",s);
         }else{
             eprintln!("there is no such service method. Please use `systemd`")
         }
