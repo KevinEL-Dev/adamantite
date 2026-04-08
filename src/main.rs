@@ -544,10 +544,11 @@ fn main() {
     // # this systemd is default, hytale is default service name
     // method="systemd"
     // name="hytale"
+
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
-    let hytale_pid = find_pid_of_hytale(table);
+    let hytale_pid = find_pid_of_hytale();
     let num_of_cpus = num_of_cpus as f32;
     match &args.command {
         Some(Commands::Track {
@@ -592,7 +593,7 @@ fn main() {
         }
     }
 }
-fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
+fn find_pid_of_hytale() -> u32 {
     // check which settings have been set
     // if settings have been set, us systemd command
     let data_path = return_config_dir("adamantite".to_string()).unwrap();
@@ -607,7 +608,6 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
     let table = settings.get_table("search_method").unwrap();
     let service_method = table.get("method").unwrap();
     let service_name = table.get("service_name").unwrap();
-    println!("method: {:?}\n and service_name{:?}",service_method,service_name);
     if let Ok(method) = service_method.clone().into_string() {
         if method == "systemd"{
             let name = service_name.clone().into_string().expect("failed to turn service name into a valid string");
@@ -620,22 +620,22 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
                 .expect("failed to start systemd");
             systemd_cgls_child.wait().expect("failed to wait on ps");
             let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
-    let mut awk_child = Command::new("/bin/awk")
-        .arg("END {print $1}")
-        .stdin(Stdio::from(systemd_cgls_out))
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("failed to start awk process");
+            let mut awk_child = Command::new("/bin/awk")
+                .arg("END {print $1}")
+                .stdin(Stdio::from(systemd_cgls_out))
+                .stdout(Stdio::piped())
+                .spawn()
+                .expect("failed to start awk process");
 
-    awk_child.wait().expect("failed to wait on awk child");
+            awk_child.wait().expect("failed to wait on awk child");
 
-        let output = awk_child
-            .wait_with_output()
-            .expect("failed to wait for awk");
-        let s = String::from_utf8_lossy(&output.stdout).to_string();
-        let s = &s[6..];
-        let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
-        return pid_from_s
+            let output = awk_child
+                .wait_with_output()
+                .expect("failed to wait for awk");
+            let s = String::from_utf8_lossy(&output.stdout).to_string();
+            let s = &s[6..]; // removes unicode arrow from systemd-cgls
+            let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
+            return pid_from_s
         }else{
             eprintln!("there is no such service method. Please use `systemd`")
         }
