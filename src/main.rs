@@ -631,9 +631,6 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
                 .expect("failed to start systemd");
             systemd_cgls_child.wait().expect("failed to wait on ps");
             let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
-            // let output = systemd_cgls_child.wait_with_output().expect("failed to wain on systemd");
-            // let soutput = String::from_utf8_lossy(&output.stdout).to_string();
-            // println!("systemd output\n{}",soutput );
     let mut awk_child = Command::new("/bin/awk")
         .arg("END {print $1}")
         .stdin(Stdio::from(systemd_cgls_out))
@@ -647,9 +644,9 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
             .wait_with_output()
             .expect("failed to wait for awk");
         let s = String::from_utf8_lossy(&output.stdout).to_string();
-            println!("pid: {}, size is {}",s,s.chars().count());
         let s = &s[6..];
         let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
+        println!("pid extracted is {}",pid_from_s);
         return pid_from_s
         }else{
             eprintln!("there is no such service method. Please use `systemd`")
