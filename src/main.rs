@@ -622,7 +622,7 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
     if let Ok(method) = service_method.clone().into_string() {
         if method == "systemd"{
             let name = service_name.clone().into_string().expect("failed to turn service name into a valid string");
-            let systemd_cgls_child = Command::new("/bin/systemd-cgls")
+            let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
                 .arg("-u")
                 .arg(name)
                 .arg("--no-pager")
