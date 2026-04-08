@@ -15,6 +15,8 @@ use std::time::{Duration, Instant};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
 use config::{Map,Value,Config};
+use serde::Deserialize;
+use toml::Table;
 
 use directories::ProjectDirs;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -49,6 +51,15 @@ impl Display for CustomError {
         };
         write!(f, "Error: {message}")
     }
+}
+#[derive(Debug,Deserialize)]
+struct UserConfig {
+    search_method: SearchMethod
+}
+#[derive(Debug,Deserialize)]
+struct SearchMethod {
+    method: String,
+    unit_name: String,
 }
 /// Track system resources over time
 #[derive(Parser)]
@@ -533,13 +544,6 @@ fn main() {
     // now we check for simple configuration
     let data_path = return_config_dir("adamantite".to_string()).unwrap();
 
-    let full_path = data_path + "/config";
-    let settings = Config::builder()
-        // add in `~/.config/adamantite/config.toml`
-        .add_source(config::File::with_name(&full_path))
-        .build()
-        .unwrap();
-
     // [search-method]
     // # this systemd is default, hytale is default service name
     // method="systemd"
@@ -593,11 +597,30 @@ fn main() {
         }
     }
 }
+fn get_config_file_contents(path: String) -> std::io::Result<String>{
+    let mut file = File::open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+    Ok(contents)
+}
 fn find_pid_of_hytale() -> u32 {
     // check which settings have been set
     // if settings have been set, us systemd command
+    // config directory will already exist
     let data_path = return_config_dir("adamantite".to_string()).unwrap();
 
+    let new_full_path = data_path.clone() + "/config.toml";
+    // check if config already exists
+    if fs::exists(new_full_path.clone()).expect("failed to check for existence"){
+
+        let contents = get_config_file_contents(new_full_path).unwrap();
+        let config: UserConfig = toml::from_str(&contents).unwrap();
+        println!("{:?}",config);
+    }else{
+        // create a default config
+        println!("config dne exist");
+        process::exit(1)
+    }
     let full_path = data_path + "/config";
     let settings = Config::builder()
         // add in `~/.config/adamantite/config.toml`
