@@ -647,7 +647,7 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
             .wait_with_output()
             .expect("failed to wait for awk");
         let s = String::from_utf8_lossy(&output.stdout).to_string();
-            println!("pid: {}, size is {}",s,s.len());
+            println!("pid: {}, size is {}",s,s.chars().count());
         }else{
             eprintln!("there is no such service method. Please use `systemd`")
         }
