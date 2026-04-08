@@ -614,7 +614,6 @@ fn find_pid_of_hytale() -> u32 {
     if fs::exists(new_full_path.clone()).expect("failed to check for existence"){
         let contents = get_config_file_contents(new_full_path).unwrap();
         let config: UserConfig = toml::from_str(&contents).unwrap();
-        println!("{:?}",config);
         if config.search_method.method == "systemd"{
             let mut status = Command::new("/bin/systemd-cgls")
                 .arg("-u")
@@ -633,7 +632,12 @@ fn find_pid_of_hytale() -> u32 {
                     .stdout(Stdio::piped())
                     .spawn()
                     .expect("failed to start systemd");
-                systemd_cgls_child.wait().expect("failed to wait on ps");
+                let ecode = systemd_cgls_child.wait().expect("failed to wait on ps");
+                if ecode.success() == false{
+                    let systemd_cgls_out = systemd_cgls_child.wait_with_output().expect("failed to start echo process");
+                    println!("{}",String::from_utf8_lossy(&systemd_cgls_out.stdout));
+                    process::exit(1)
+                }
                 let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
                 let mut awk_child = Command::new("/bin/awk")
                     .arg("END {print $1}")
