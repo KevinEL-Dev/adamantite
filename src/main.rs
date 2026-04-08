@@ -616,31 +616,42 @@ fn find_pid_of_hytale() -> u32 {
         let config: UserConfig = toml::from_str(&contents).unwrap();
         println!("{:?}",config);
         if config.search_method.method == "systemd"{
-            let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
+            let mut status = Command::new("/bin/systemd-cgls")
                 .arg("-u")
-                .arg(config.search_method.unit_name)
+                .arg(config.search_method.unit_name.clone())
                 .arg("--no-pager")
-                .stdout(Stdio::piped())
-                .spawn()
+                .status()
                 .expect("failed to start systemd");
-            systemd_cgls_child.wait().expect("failed to wait on ps");
-            let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
-            let mut awk_child = Command::new("/bin/awk")
-                .arg("END {print $1}")
-                .stdin(Stdio::from(systemd_cgls_out))
-                .stdout(Stdio::piped())
-                .spawn()
-                .expect("failed to start awk process");
+            if status.success() == false{
+                println!("most likely failed to find service, verify your unit name for your service");
+                process::exit(1)
+            }else{
+                let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
+                    .arg("-u")
+                    .arg(config.search_method.unit_name)
+                    .arg("--no-pager")
+                    .stdout(Stdio::piped())
+                    .spawn()
+                    .expect("failed to start systemd");
+                systemd_cgls_child.wait().expect("failed to wait on ps");
+                let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
+                let mut awk_child = Command::new("/bin/awk")
+                    .arg("END {print $1}")
+                    .stdin(Stdio::from(systemd_cgls_out))
+                    .stdout(Stdio::piped())
+                    .spawn()
+                    .expect("failed to start awk process");
 
-            awk_child.wait().expect("failed to wait on awk child");
+                awk_child.wait().expect("failed to wait on awk child");
 
-            let output = awk_child
-                .wait_with_output()
-                .expect("failed to wait for awk");
-            let s = String::from_utf8_lossy(&output.stdout).to_string();
-            let s = &s[6..]; // removes unicode arrow from systemd-cgls
-            let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
-            return pid_from_s
+                let output = awk_child
+                    .wait_with_output()
+                    .expect("failed to wait for awk");
+                let s = String::from_utf8_lossy(&output.stdout).to_string();
+                let s = &s[6..]; // removes unicode arrow from systemd-cgls
+                let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
+                return pid_from_s
+            }
         }
     }else{
         // create a default config
