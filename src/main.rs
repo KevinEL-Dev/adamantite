@@ -204,7 +204,7 @@ impl App {
         let list_widget = List::new(self.current_hytale_log_strings.clone())
             .block(Block::bordered().title("List"))
             .style(Style::new().white())
-            .highlight_style(Style::new().italic())
+            .highlight_style(Style::new().reversed())
             .highlight_symbol(">>")
             .repeat_highlight_symbol(true)
             .direction(ListDirection::TopToBottom);
@@ -540,21 +540,10 @@ fn main() {
         .build()
         .unwrap();
 
-    let table = settings.get_table("search_method").unwrap();
-    let other_table = settings.get_table("server").unwrap();
-    // println!(
-    // "{:?}",
-    //     table
-    // );
-    let service_method = table.get("method").unwrap();
-    let service_name = table.get("service_name").unwrap();
-    println!("method: {:?}\n and service_name{:?}",service_method,service_name);
-    // allow user to set to search via systemd
     // [search-method]
     // # this systemd is default, hytale is default service name
     // method="systemd"
     // name="hytale"
-
     let mut sys = System::new();
     sys.refresh_all();
     let num_of_cpus = sys.cpus().len();
@@ -646,7 +635,6 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
         let s = String::from_utf8_lossy(&output.stdout).to_string();
         let s = &s[6..];
         let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
-        println!("pid extracted is {}",pid_from_s);
         return pid_from_s
         }else{
             eprintln!("there is no such service method. Please use `systemd`")
@@ -654,6 +642,7 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
     }else{
         eprintln!("Transforming service_method into a string failed")
     }
+    // current default method
     let mut ps_child = Command::new("/bin/ps")
         .arg("aux")
         .stdout(Stdio::piped())
