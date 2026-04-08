@@ -630,7 +630,7 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
                 .spawn()
                 .expect("failed to start systemd");
             systemd_cgls_child.wait().expect("failed to wain on systemd");
-            println!("systemd output\n{:?}",systemd_cgls_child.stdout);
+            println!("systemd output\n{:?}",systemd_cgls_child.stdout.expect("failed to get systemd-cgls output"));
         }else{
             eprintln!("there is no such service method. Please use `systemd`")
         }
