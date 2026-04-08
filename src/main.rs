@@ -605,6 +605,36 @@ fn main() {
 }
 fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
     // check which settings have been set
+    // if settings have been set, us systemd command
+    let data_path = return_config_dir("adamantite".to_string()).unwrap();
+
+    let full_path = data_path + "/config";
+    let settings = Config::builder()
+        // add in `~/.config/adamantite/config.toml`
+        .add_source(config::File::with_name(&full_path))
+        .build()
+        .unwrap();
+
+    let table = settings.get_table("search_method").unwrap();
+    let service_method = table.get("method").unwrap();
+    let service_name = table.get("service_name").unwrap();
+    println!("method: {:?}\n and service_name{:?}",service_method,service_name);
+    if let Ok(method) = service_method.clone().into_string() {
+        if method == "systemd"{
+            let name = service_name.clone().into_string().expect("failed to turn service name into a valid string");
+            let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
+                .arg("-u")
+                .arg(name)
+                .spawn()
+                .expect("failed to start systemd");
+            systemd_cgls_child.wait().expect("failed to wain on systemd");
+            println!("systemd output\n{:?}",systemd_cgls_child.stdout);
+        }else{
+            eprintln!("there is no such service method. Please use `systemd`")
+        }
+    }else{
+        eprintln!("Transforming service_method into a string failed")
+    }
     let mut ps_child = Command::new("/bin/ps")
         .arg("aux")
         .stdout(Stdio::piped())
