@@ -625,7 +625,8 @@ fn find_pid_of_hytale() -> u32 {
                 let ecode = systemd_cgls_child.wait().expect("failed to wait on ps");
                 if ecode.success() == false{
                     let systemd_cgls_out = systemd_cgls_child.wait_with_output().expect("failed to get systemd-cgls output");
-                    print!("Systemd search method failed Error:\n {}",String::from_utf8_lossy(&systemd_cgls_out.stdout));
+                    let user_output = format!("Systemd search method failed Error:\n {}",String::from_utf8_lossy(&systemd_cgls_out.stdout));
+                    print!("{}",user_output);
                     process::exit(1)
                 }
                 let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
