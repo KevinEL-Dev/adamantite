@@ -615,16 +615,6 @@ fn find_pid_of_hytale() -> u32 {
         let contents = get_config_file_contents(new_full_path).unwrap();
         let config: UserConfig = toml::from_str(&contents).unwrap();
         if config.search_method.method == "systemd"{
-            let mut status = Command::new("/bin/systemd-cgls")
-                .arg("-u")
-                .arg(config.search_method.unit_name.clone())
-                .arg("--no-pager")
-                .status()
-                .expect("failed to start systemd");
-            if status.success() == false{
-                println!("most likely failed to find service, verify your unit name for your service");
-                process::exit(1)
-            }else{
                 let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
                     .arg("-u")
                     .arg(config.search_method.unit_name)
@@ -655,7 +645,6 @@ fn find_pid_of_hytale() -> u32 {
                 let s = &s[6..]; // removes unicode arrow from systemd-cgls
                 let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
                 return pid_from_s
-            }
         }
     }else{
         // create a default config
