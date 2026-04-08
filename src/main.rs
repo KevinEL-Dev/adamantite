@@ -630,7 +630,7 @@ fn find_pid_of_hytale() -> u32 {
 
     let table = settings.get_table("search_method").unwrap();
     let service_method = table.get("method").unwrap();
-    let service_name = table.get("service_name").unwrap();
+    let service_name = table.get("unit_name").unwrap();
     if let Ok(method) = service_method.clone().into_string() {
         if method == "systemd"{
             let name = service_name.clone().into_string().expect("failed to turn service name into a valid string");
