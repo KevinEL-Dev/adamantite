@@ -622,15 +622,16 @@ fn find_pid_of_hytale(settings: Map<String,Value>) -> u32 {
     if let Ok(method) = service_method.clone().into_string() {
         if method == "systemd"{
             let name = service_name.clone().into_string().expect("failed to turn service name into a valid string");
-            let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
+            let systemd_cgls_child = Command::new("/bin/systemd-cgls")
                 .arg("-u")
                 .arg(name)
                 .arg("--no-pager")
                 .stdout(Stdio::piped())
                 .spawn()
                 .expect("failed to start systemd");
-            systemd_cgls_child.wait().expect("failed to wain on systemd");
-            println!("systemd output\n{:?}",systemd_cgls_child.stdout.expect("failed to get systemd-cgls output"));
+            let output = systemd_cgls_child.wait_with_output().expect("failed to wain on systemd");
+            let soutput = String::from_utf8_lossy(&output.stdout).to_string();
+            println!("systemd output\n{}",soutput );
         }else{
             eprintln!("there is no such service method. Please use `systemd`")
         }
