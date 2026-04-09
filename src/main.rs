@@ -1,6 +1,5 @@
 use chrono::{TimeDelta, prelude::*};
 use clap::{Parser, Subcommand, ValueEnum};
-use serde::Serialize;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
@@ -15,7 +14,7 @@ use std::time::{Duration, Instant};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System};
 
 use config::{Map,Value,Config};
-use serde::Deserialize;
+use serde::{Serialize,Deserialize};
 use toml::Table;
 
 use directories::ProjectDirs;
@@ -52,11 +51,11 @@ impl Display for CustomError {
         write!(f, "Error: {message}")
     }
 }
-#[derive(Debug,Deserialize)]
+#[derive(Debug,Serialize,Deserialize)]
 struct UserConfig {
     search_method: SearchMethod
 }
-#[derive(Debug,Deserialize)]
+#[derive(Debug,Serialize,Deserialize)]
 struct SearchMethod {
     method: String,
     unit_name: String,
@@ -603,16 +602,20 @@ fn get_config_file_contents(path: String) -> std::io::Result<String>{
     file.read_to_string(&mut contents)?;
     Ok(contents)
 }
+fn write_default_config(path: String, config: String) -> std::io::Result<()> {
+    fs::write(path,config)?;
+    Ok(())
+}
 fn find_pid_of_hytale() -> u32 {
     // check which settings have been set
     // if settings have been set, us systemd command
     // config directory will already exist
     let data_path = return_config_dir("adamantite".to_string()).unwrap();
 
-    let new_full_path = data_path.clone() + "/config.toml";
+    let config_path = data_path.clone() + "/config.toml";
     // check if config already exists
-    if fs::exists(new_full_path.clone()).expect("failed to check for existence"){
-        let contents = get_config_file_contents(new_full_path).unwrap();
+    if fs::exists(config_path.clone()).expect("failed to check for existence"){
+        let contents = get_config_file_contents(config_path).unwrap();
         let config: UserConfig = toml::from_str(&contents).unwrap();
         if config.search_method.method == "systemd"{
                 let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
@@ -650,8 +653,21 @@ fn find_pid_of_hytale() -> u32 {
         }
     }else{
         // create a default config
-        println!("config dne exist");
-        process::exit(1)
+        let config = UserConfig {
+            search_method: SearchMethod {
+                method: String::from("systemd"),
+                unit_name: String::from("hytale")
+            }
+        };
+
+        let toml = toml::to_string(&config).unwrap();
+        // write this to a file
+        if let Err(err) = write_default_config(config_path,toml) {
+            eprintln!("{err}");
+            process::exit(1)
+        }
+        println!("Default Config created");
+        return find_pid_of_hytale();
     }
     // let full_path = data_path + "/config";
     // let settings = Config::builder()
