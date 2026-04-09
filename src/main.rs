@@ -215,7 +215,7 @@ impl App {
                 if last_emit_for_graph.elapsed() >= Duration::from_secs(1) {
                     self.update_data_points((time_in_seconds_counter as f64, current_system_cpu_usage.into()));
                     time_in_seconds_counter += 1;
-                    last_emit += Duration::from_secs(1);
+                    last_emit_for_graph += Duration::from_secs(1);
                 }
             }
             terminal.draw(|frame| self.draw(frame, &mut vertical, &mut state))?;
