@@ -253,7 +253,7 @@ impl App {
                 .data(&self.data_points)
         ];
         let mut bounds: [f64; 2] = [0.0,0.0] ;
-        let mut y_bounds: [f64; 2] = [0.0,100.0];
+        let y_bounds: [f64; 2] = [0.0,100.0];
         let len_of_data_points = self.data_points.len();
         if len_of_data_points >= 1{
             bounds[0] = 0 as f64;
@@ -262,7 +262,8 @@ impl App {
         let x_axis = Axis::default()
             .title("X Axis".red())
             .style(Style::default().white())
-            .bounds(bounds);
+            .bounds(bounds)
+            .labels([bounds[0].to_string(),bounds[1].to_string()]);
         let y_axis = Axis::default()
             .title("Y Axis".red())
             .style(Style::default().white())
