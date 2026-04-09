@@ -213,7 +213,7 @@ impl App {
                 self.update_current_vertical(vertical);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
                 if last_emit_for_graph.elapsed() >= Duration::from_secs(1) {
-                    self.update_data_points((time_in_seconds_counter as f64, current_system_cpu_usage));
+                    self.update_data_points((time_in_seconds_counter as f64, current_system_cpu_usage.into()));
                     time_in_seconds_counter += 1;
                     last_emit += Duration::from_secs(1);
                 }
