@@ -119,6 +119,7 @@ enum Commands {
         #[arg(short, long, default_value_t = 500)]
         interval_ms: u64,
     },
+    /// Set config options
     Config {
         /// Update config
         #[arg(value_enum)]
