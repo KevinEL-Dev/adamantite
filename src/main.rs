@@ -555,8 +555,46 @@ fn main() {
         process::exit(1)
     }
 
+    if let Some(Commands::Config{input, config_variable }) = &args.command {
+            // make sure that config already exists,
+
+            let data_path = return_config_dir("adamantite".to_string()).unwrap();
+            let config_path = data_path.clone() + "/config.toml";
+
+            // make a default config
+            // overwrite this default config if a config already exists
+            let mut config = UserConfig{
+                search_method: SearchMethod {
+                    method: String::from("systemd"),
+                    unit_name: String::from("hytale"),
+                }
+            };
+            if fs::exists(config_path.clone()).expect("failed to check for existence"){
+                let contents = get_config_file_contents(config_path.clone()).unwrap();
+                let user_config: UserConfig = toml::from_str(&contents).unwrap();
+                config = user_config;
+            }
+            // from here reset the config, then serialize
+            match config_variable{
+                ConfigVariable::UnitName => {
+                    config.search_method.unit_name = input.to_string();
+                }
+                ConfigVariable::Method => {
+                    config.search_method.method = input.to_string();
+                }
+            }
+            // now serialize and overwrite the old config
+
+            let toml = toml::to_string(&config).unwrap();
+            // over_write with new config this to a file
+            if let Err(err) = write_default_config(config_path,toml) {
+                eprintln!("{err}");
+                process::exit(1)
+            }
+        println!("Config Updated");
+        process::exit(0)
+    }
     // now we check for simple configuration
-    let data_path = return_config_dir("adamantite".to_string()).unwrap();
 
     // [search-method]
     // # this systemd is default, hytale is default service name
@@ -606,44 +644,7 @@ fn main() {
                 process::exit(1);
             }
         },
-        Some(Commands::Config {input, config_variable}) => {
-            // make sure that config already exists,
-
-            let data_path = return_config_dir("adamantite".to_string()).unwrap();
-            let config_path = data_path.clone() + "/config.toml";
-
-            // make a default config
-            // overwrite this default config if a config already exists
-            let mut config = UserConfig{
-                search_method: SearchMethod {
-                    method: String::from("systemd"),
-                    unit_name: String::from("hytale"),
-                }
-            };
-            if fs::exists(config_path.clone()).expect("failed to check for existence"){
-                let contents = get_config_file_contents(config_path.clone()).unwrap();
-                let user_config: UserConfig = toml::from_str(&contents).unwrap();
-                config = user_config;
-            }
-            // from here reset the config, then serialize
-            match config_variable{
-                ConfigVariable::UnitName => {
-                    config.search_method.unit_name = input.to_string();
-                }
-                ConfigVariable::Method => {
-                    config.search_method.method = input.to_string();
-                }
-            }
-            // now serialize and overwrite the old config
-
-            let toml = toml::to_string(&config).unwrap();
-            // over_write with new config this to a file
-            if let Err(err) = write_default_config(config_path,toml) {
-                eprintln!("{err}");
-                process::exit(1)
-            }
-        }
-        None => {
+        _ => {
             todo!()
         }
     }
