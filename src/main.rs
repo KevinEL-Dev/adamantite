@@ -83,6 +83,13 @@ enum PressureType {
     Mem,
 }
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum ConfigVariable {
+    /// Set Unit Name 
+    UnitName,
+    /// Set Method Type
+    Method,
+}
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum OutputType {
     /// Output type of CSV
     Csv,
@@ -112,6 +119,13 @@ enum Commands {
         #[arg(short, long, default_value_t = 500)]
         interval_ms: u64,
     },
+    Config {
+        /// Update config
+        #[arg(value_enum)]
+        config_variable: ConfigVariable,
+        /// What you want set for config variable
+        input: String,
+    }
 }
 
 #[cfg(test)]
@@ -589,6 +603,43 @@ fn main() {
             if let Err(err) = run_live(*interval_ms as i64, &mut sys, hytale_pid) {
                 println!("{}", err);
                 process::exit(1);
+            }
+        },
+        Some(Commands::Config {input, config_variable}) => {
+            // make sure that config already exists,
+
+            let data_path = return_config_dir("adamantite".to_string()).unwrap();
+            let config_path = data_path.clone() + "/config.toml";
+
+            // make a default config
+            // overwrite this default config if a config already exists
+            let mut config = UserConfig{
+                search_method: SearchMethod {
+                    method: String::from("systemd"),
+                    unit_name: String::from("hytale"),
+                }
+            };
+            if fs::exists(config_path.clone()).expect("failed to check for existence"){
+                let contents = get_config_file_contents(config_path.clone()).unwrap();
+                let user_config: UserConfig = toml::from_str(&contents).unwrap();
+                config = user_config;
+            }
+            // from here reset the config, then serialize
+            match config_variable{
+                ConfigVariable::UnitName => {
+                    config.search_method.unit_name = input.to_string();
+                }
+                ConfigVariable::Method => {
+                    config.search_method.method = input.to_string();
+                }
+            }
+            // now serialize and overwrite the old config
+
+            let toml = toml::to_string(&config).unwrap();
+            // over_write with new config this to a file
+            if let Err(err) = write_default_config(config_path,toml) {
+                eprintln!("{err}");
+                process::exit(1)
             }
         }
         None => {
