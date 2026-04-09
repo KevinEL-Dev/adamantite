@@ -257,7 +257,7 @@ impl App {
         let len_of_data_points = self.data_points.len();
         if len_of_data_points >= 1{
             bounds[0] = 0 as f64;
-            bounds[1] = self.data_points[len_of_data_points].0;
+            bounds[1] = self.data_points[len_of_data_points - 1].0;
         }        
         let x_axis = Axis::default()
             .title("X Axis".red())
