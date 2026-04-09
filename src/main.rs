@@ -227,7 +227,7 @@ impl App {
             .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(layout[1]);
         let list_widget = List::new(self.current_hytale_log_strings.clone())
-            .block(Block::bordered().title("List"))
+            .block(Block::bordered().title("Logs"))
             .style(Style::new().white())
             .highlight_style(Style::new().reversed())
             .highlight_symbol(">>")
