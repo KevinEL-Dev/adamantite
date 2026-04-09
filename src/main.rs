@@ -20,8 +20,9 @@ use toml::Table;
 use directories::ProjectDirs;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::prelude::*;
+use ratatui::symbols;
 use ratatui::style::Style;
-use ratatui::widgets::{Bar, BarChart};
+use ratatui::widgets::{Chart, Dataset,Bar, BarChart, Axis,GraphType};
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
@@ -150,6 +151,8 @@ pub struct App {
     hytale_mem_usage: f64,
     current_hytale_log: Vec<HytaleLog>,
     current_hytale_log_strings: Vec<String>,
+    // x is time in seconds passed, y is system resource
+    data_points: Vec<(f64,f64)>,
     vertical_scroll: usize,
     vertical: ScrollbarState,
     curr_index: i64,
@@ -165,8 +168,11 @@ impl App {
     ) -> io::Result<()> {
         let num_of_cpus = sys.cpus().len() as f32;
         let mut last_emit = Instant::now();
+        let mut last_emit_for_graph = Instant::now();
         let mut state = ListState::default();
+        let mut time_in_seconds_counter: u32 = 0;
         self.curr_index = 0;
+        self.data_points = Vec::new();
         let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(0);
 
         while !self.exit {
@@ -206,6 +212,11 @@ impl App {
                     .position(self.curr_index.try_into().unwrap());
                 self.update_current_vertical(vertical);
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
+                if last_emit_for_graph.elapsed() >= Duration::from_secs(1) {
+                    self.update_data_points((time_in_seconds_counter as f64, current_system_cpu_usage));
+                    time_in_seconds_counter += 1;
+                    last_emit += Duration::from_secs(1);
+                }
             }
             terminal.draw(|frame| self.draw(frame, &mut vertical, &mut state))?;
             if event::poll(Duration::from_millis(16))? {
@@ -233,7 +244,36 @@ impl App {
             .highlight_symbol(">>")
             .repeat_highlight_symbol(true)
             .direction(ListDirection::TopToBottom);
-        frame.render_widget(self, layout[0]);
+        let datasets = vec![
+            Dataset::default()
+                .name("Hytale CPU resource overtime")
+                .marker(symbols::Marker::Dot)
+                .graph_type(GraphType::Line)
+                .style(Style::default().magenta())
+                .data(&self.data_points)
+        ];
+        let mut bounds: [f64; 2] = [0.0,0.0] ;
+        let mut y_bounds: [f64; 2] = [0.0,100.0];
+        let len_of_data_points = self.data_points.len();
+        if len_of_data_points >= 1{
+            bounds[0] = 0 as f64;
+            bounds[1] = self.data_points[len_of_data_points].0;
+        }        
+        let x_axis = Axis::default()
+            .title("X Axis".red())
+            .style(Style::default().white())
+            .bounds(bounds);
+        let y_axis = Axis::default()
+            .title("Y Axis".red())
+            .style(Style::default().white())
+            .bounds(y_bounds)
+            .labels(["0.0","50.0","100.0"]);
+
+        let chart = Chart::new(datasets)
+            .block(Block::new().title("Chart"))
+            .x_axis(x_axis)
+            .y_axis(y_axis);
+        frame.render_widget(chart,layout[0]);
         frame.render_widget(
             BarChart::new([
                 Bar::with_label("system cpu usage", self.system_cpu_usage as u64),
@@ -344,6 +384,9 @@ impl App {
         if self.vertical_scroll < self.current_hytale_log_strings.len() {
             self.vertical_scroll += 1
         }
+    }
+    fn update_data_points(&mut self, datapoints: (f64,f64)) {
+        self.data_points.push(datapoints);
     }
 }
 impl Widget for &App {
