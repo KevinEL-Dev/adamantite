@@ -69,7 +69,6 @@ This command will write to a file with either the name mem_usage.csv or cpu_usag
 An example of the file contents are this
 
 ![Project Screenshot](./assets/mem_t_10_o_csv.png)
-```
 
 To see io pressure that your system is currently experiencing:
 ```bash
