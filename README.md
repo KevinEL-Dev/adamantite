@@ -29,6 +29,8 @@ adamantite config unit-name "hytaleserver"
 ```
 This will update adamantite config.toml located, on a linux system at least, at ~/.config/adamantite/config.toml
 
+To track a cpu over 5 seconds and output as a csv run:
+
 ```bash
 adamantite track cpu -t 5 -o csv
 ```
