@@ -4,12 +4,12 @@ cargo build --release
 
 version="$(toml get Cargo.toml package.version -r)"
 
-mkdir -p dist/adamantite-v${version}-unknown-linux-gnu
+mkdir -p adamantite-v${version}-unknown-linux-gnu
 
-cp target/release/adamantite dist/adamantite-v${version}-unknown-linux-gnu/
-cp README.md dist/adamantite-v${version}-unknown-linux-gnu/
-cp LICENSE dist/adamantite-v${version}-unknown-linux-gnu/
+cp target/release/adamantite adamantite-v${version}-unknown-linux-gnu/
+cp README.md adamantite-v${version}-unknown-linux-gnu/
+cp LICENSE adamantite-v${version}-unknown-linux-gnu/
 
-tar czf dist/adamantite-v${version}-unknown-linux-gnu.tar.gz dist/adamantite-v${version}-unknown-linux-gnu/
+tar czf adamantite-v${version}-unknown-linux-gnu.tar.gz adamantite-v${version}-unknown-linux-gnu/
 
-sha256sum dist/adamantite-v${version}-unknown-linux-gnu.tar.gz > dist/SHA256SUMS 
+sha256sum adamantite-v${version}-unknown-linux-gnu.tar.gz > SHA256SUMS 
