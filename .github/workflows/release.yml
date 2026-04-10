@@ -1,0 +1,27 @@
+name: Create Release
+
+# trigger workflow on new push to tags
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Install rust and cargo
+        run: sudo apt install rustc cargo
+      - name: Install toml-cli
+        run: cargo install toml-cli
+      - name: Build Project
+        run: ./build-script.sh
+      - name: Create Release with Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/adamantite-v${{ github.ref_name }}-unknown-linux-gnu.tar.gz
+            dist/256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
