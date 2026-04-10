@@ -253,7 +253,7 @@ impl App {
                 .data(&self.data_points)
         ];
         let mut bounds: [f64; 2] = [0.0,0.0] ;
-        let y_bounds: [f64; 2] = [0.0,100.0];
+        let y_bounds: [f64; 2] = [0.0,50.0];
         let len_of_data_points = self.data_points.len();
         if len_of_data_points >= 1{
             bounds[0] = 0 as f64;
