@@ -272,7 +272,7 @@ impl App {
             .title("CPU Usage".red())
             .style(Style::default().white())
             .bounds(y_bounds)
-            .labels(["0.0%","25.0%","50.0%","75.0%","100.0%"]);
+            .labels(["0.0%","10.0%","20.0%","30.0%","40.0%","50.0%"]);
 
         let chart = Chart::new(datasets)
             .block(Block::new().title("Chart"))
