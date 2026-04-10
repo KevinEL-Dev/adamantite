@@ -23,7 +23,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/adamantite-v${{ github.ref_name }}-unknown-linux-gnu.tar.gz
-            dist/256SUMS
+            dist/adamantite-${{ github.ref_name }}-unknown-linux-gnu.tar.gz
+            dist/SHA256SUMS
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
