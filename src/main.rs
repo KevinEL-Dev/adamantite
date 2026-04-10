@@ -750,7 +750,10 @@ fn find_pid_of_hytale() -> u32 {
                 let s = String::from_utf8_lossy(&output.stdout).to_string();
                 let s = &s[6..]; // removes unicode arrow from systemd-cgls
                 let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
-                return pid_from_s
+                pid_from_s
+        }else {
+            eprintln!("Currently no other method of search besides systemd. Please switch to systemd as search method");
+            process::exit(1)
         }
     }else{
         // create a default config
@@ -768,99 +771,8 @@ fn find_pid_of_hytale() -> u32 {
             process::exit(1)
         }
         println!("Default Config created");
-        return find_pid_of_hytale();
+        find_pid_of_hytale()
     }
-    // let full_path = data_path + "/config";
-    // let settings = Config::builder()
-    //     // add in `~/.config/adamantite/config.toml`
-    //     .add_source(config::File::with_name(&full_path))
-    //     .build()
-    //     .unwrap();
-    //
-    // let table = settings.get_table("search_method").unwrap();
-    // let service_method = table.get("method").unwrap();
-    // let service_name = table.get("unit_name").unwrap();
-    // if let Ok(method) = service_method.clone().into_string() {
-    //     if method == "systemd"{
-    //         let name = service_name.clone().into_string().expect("failed to turn service name into a valid string");
-    //         let mut systemd_cgls_child = Command::new("/bin/systemd-cgls")
-    //             .arg("-u")
-    //             .arg(name)
-    //             .arg("--no-pager")
-    //             .stdout(Stdio::piped())
-    //             .spawn()
-    //             .expect("failed to start systemd");
-    //         systemd_cgls_child.wait().expect("failed to wait on ps");
-    //         let systemd_cgls_out = systemd_cgls_child.stdout.expect("failed to start echo process");
-    //         let mut awk_child = Command::new("/bin/awk")
-    //             .arg("END {print $1}")
-    //             .stdin(Stdio::from(systemd_cgls_out))
-    //             .stdout(Stdio::piped())
-    //             .spawn()
-    //             .expect("failed to start awk process");
-    //
-    //         awk_child.wait().expect("failed to wait on awk child");
-    //
-    //         let output = awk_child
-    //             .wait_with_output()
-    //             .expect("failed to wait for awk");
-    //         let s = String::from_utf8_lossy(&output.stdout).to_string();
-    //         let s = &s[6..]; // removes unicode arrow from systemd-cgls
-    //         let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
-    //         return pid_from_s
-    //     }else{
-    //         eprintln!("there is no such service method. Please use `systemd`")
-    //     }
-    // }else{
-    //     eprintln!("Transforming service_method into a string failed")
-    // }
-    // current default method
-    let mut ps_child = Command::new("/bin/ps")
-        .arg("aux")
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("failed to start ps");
-    ps_child.wait().expect("failed to wait on ps");
-    let ps_out = ps_child.stdout.expect("failed to start echo process");
-
-    let mut grep_child = Command::new("/bin/grep")
-        .arg("java -jar HytaleServer.jar --assets ../Assets.zip --backup --backup-dir backups --backup-frequency 30")
-        .stdin(Stdio::from(ps_out))
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("failed te start grep process");
-
-    grep_child.wait().expect("failed to wait on child");
-
-    let grep_output = grep_child.stdout.expect("failed to get grep output");
-
-    let mut head_child = Command::new("/bin/head")
-        .arg("-n")
-        .arg("1")
-        .stdin(Stdio::from(grep_output))
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("failed to start the head process");
-
-    head_child.wait().expect("failed to wait on head child");
-
-    let head_output = head_child.stdout.expect("failed to get head output");
-
-    let mut awk_child = Command::new("/bin/awk")
-        .arg("{print $2}")
-        .stdin(Stdio::from(head_output))
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("failed to start awk process");
-
-    awk_child.wait().expect("failed to wait on awk child");
-
-    let output = awk_child
-        .wait_with_output()
-        .expect("failed to wait for awk");
-    let s = String::from_utf8_lossy(&output.stdout).to_string();
-    let pid_from_s: u32 = s.trim().parse().expect("not a valid number");
-    pid_from_s
 }
 fn get_hytale_logs() -> String {
     let journalctl_child = Command::new("/bin/journalctl")
