@@ -11,6 +11,8 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: Install rust and cargo
         run: sudo apt install rustc cargo
       - name: Install toml-cli
