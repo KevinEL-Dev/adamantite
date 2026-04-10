@@ -246,7 +246,7 @@ impl App {
             .direction(ListDirection::TopToBottom);
         let datasets = vec![
             Dataset::default()
-                .name("Hytale CPU resource overtime")
+                .name("Hytale CPU Usage overtime")
                 .marker(symbols::Marker::Dot)
                 .graph_type(GraphType::Line)
                 .style(Style::default().magenta())
