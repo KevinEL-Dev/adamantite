@@ -258,23 +258,21 @@ impl App {
         if len_of_data_points >= 1{
             bounds[0] = 0 as f64;
             bounds[1] = self.data_points[len_of_data_points - 1].0;
-            // what should happen when 61 appears?
-            // i should look at the range from so if bounds[1] > 60 bounds[0] should be bounds[1] -
-    // 60 +
+            // 60 seconds should fit on a decent sized terminal
             if bounds[1] > 60.0{
                 bounds[0] = bounds[1] - 60.0;
             }
         }        
         let x_axis = Axis::default()
-            .title("X Axis".red())
+            .title("Time in Seconds".red())
             .style(Style::default().white())
             .bounds(bounds)
             .labels([bounds[0].to_string(),bounds[1].to_string()]);
         let y_axis = Axis::default()
-            .title("Y Axis".red())
+            .title("CPU Usage".red())
             .style(Style::default().white())
             .bounds(y_bounds)
-            .labels(["0.0","50.0","100.0"]);
+            .labels(["0.0%","25.0%","50.0%","75.0%","100.0%"]);
 
         let chart = Chart::new(datasets)
             .block(Block::new().title("Chart"))
