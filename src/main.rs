@@ -258,6 +258,12 @@ impl App {
         if len_of_data_points >= 1{
             bounds[0] = 0 as f64;
             bounds[1] = self.data_points[len_of_data_points - 1].0;
+            // what should happen when 61 appears?
+            // i should look at the range from so if bounds[1] > 60 bounds[0] should be bounds[1] -
+    // 60 +
+            if bounds[1] > 60.0{
+                bounds[0] = bounds[1] - 60.0;
+            }
         }        
         let x_axis = Axis::default()
             .title("X Axis".red())
