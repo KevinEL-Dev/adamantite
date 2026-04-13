@@ -9,7 +9,7 @@ My reasoning for building this tool is because I wanted to learn rust. But also 
 
 
 # Usage 
-![adamantite live demo](assets/adamantite_live_demo.gif)
+![adamantite live demo](assets/live_demo_v0_2_1.gif)
 
 ## Installation methods
 There is binary realeses for linux, you can clone this repo, or run 
