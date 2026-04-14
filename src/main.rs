@@ -279,7 +279,7 @@ impl App {
             .labels(["0.0%","10.0%","20.0%","30.0%","40.0%","50.0%"]);
 
         let chart = Chart::new(datasets)
-            .block(Block::new().title("Chart"))
+            .block(Block::bordered().title("Chart"))
             .x_axis(x_axis)
             .y_axis(y_axis);
         let text = vec![
