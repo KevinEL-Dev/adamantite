@@ -290,9 +290,7 @@ impl App {
                 Span::raw("Average System CPU usage "),
                 Span::styled(avg_system_cpu_usage.to_string(),Style::new().green().italic()),
                 ".".into(),
-            ]),
-            Line::from("Second line".red()),
-            "Third Line".into(),
+            ])
         ];
         frame.render_widget(chart,top_inner_layout[0]);
         frame.render_widget(Paragraph::new(text)
