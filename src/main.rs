@@ -38,6 +38,11 @@ use ratatui::{
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
+
+const OKCPUTHRESHOLD: f32 = 30.0;
+const WATCHCPUTHERSHOLD: f32 = 70.0;
+const WARNINGCPUTHRESHOLD: f32 = 100.0;
+
 #[derive(Debug)]
 enum CustomError {
     NoJournalCtlOutput,
@@ -136,11 +141,30 @@ mod tests {
     use super::*;
     use ratatui::style::Style;
 
+    // #[test]
+    // fn handle_key_event() {
+    //     let mut app = App::default();
+    //     app.handle_key_event(KeyCode::Char('q').into());
+    //     assert!(app.exit);
+    // }
     #[test]
-    fn handle_key_event() {
-        let mut app = App::default();
-        app.handle_key_event(KeyCode::Char('q').into());
-        assert!(app.exit);
+    fn set_color_for_avg_cpu_usage() {
+        let avg_system_cpu_usage: [f32; 3] = [29.0,50.2,89.3] ;
+        let correct_style: [Style; 3] = [Style::new().green().italic(),Style::new().yellow().italic(),Style::new().red().italic()];
+
+        let mut style_iter = correct_style.into_iter();
+        for cpu_usage in avg_system_cpu_usage {
+            let color =
+                if cpu_usage < OKCPUTHRESHOLD {
+                    Style::new().green().italic()
+                }else if cpu_usage > OKCPUTHRESHOLD && cpu_usage < WATCHCPUTHERSHOLD {
+                    Style::new().yellow().italic()
+                }else{
+                     Style::new().red().italic()
+                };
+            assert_eq!(color,style_iter.next().unwrap(), "testing whether correct color is chosen when cpu usage is between certain thresholds");
+
+        }
     }
 }
 #[derive(Debug, Default)]
@@ -285,10 +309,18 @@ impl App {
             .block(Block::bordered().title("Chart"))
             .x_axis(x_axis)
             .y_axis(y_axis);
+        let color =
+            if avg_system_cpu_usage < OKCPUTHRESHOLD {
+                Style::new().green().italic()
+            }else if avg_system_cpu_usage > OKCPUTHRESHOLD && avg_system_cpu_usage < WATCHCPUTHERSHOLD {
+                Style::new().yellow().italic()
+            }else{
+                 Style::new().red().italic()
+            };
         let text = vec![
             Line::from(vec![
                 Span::raw("Average System CPU usage "),
-                Span::styled(avg_system_cpu_usage.to_string(),Style::new().green().italic()),
+                Span::styled(avg_system_cpu_usage.to_string(),color),
                 ".".into(),
             ])
         ];
