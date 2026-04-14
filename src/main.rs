@@ -31,7 +31,7 @@ use ratatui::{
     symbols::border,
     text::{Line, Text},
     widgets::{
-        Block, List, ListDirection, ListState, Paragraph, Scrollbar, ScrollbarOrientation,
+        Block, List, ListDirection, ListState, Paragraph, Scrollbar, ScrollbarOrientation,Wrap,
         ScrollbarState, Widget,
     },
 };
@@ -237,6 +237,10 @@ impl App {
             .direction(Direction::Horizontal)
             .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(layout[1]);
+        let top_inner_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![Constraint::Percentage(75), Constraint(25)])
+            .split(layout[0]);
         let list_widget = List::new(self.current_hytale_log_strings.clone())
             .block(Block::bordered().title("Logs"))
             .style(Style::new().white())
@@ -278,7 +282,23 @@ impl App {
             .block(Block::new().title("Chart"))
             .x_axis(x_axis)
             .y_axis(y_axis);
-        frame.render_widget(chart,layout[0]);
+        let text = vec![
+            Line::from(vec![
+                Span::raw("First"),
+                Span::styled("line",Style::new().green().italic()),
+                ".".into(),
+            ]),
+            Line::from("Second line".red()),
+            "Third Line".into(),
+        ];
+        frame.render_widget(chart,top_inner_layout[0]);
+        frame.render_widget(Paragraph::new(text)
+        .block(Block::bordered().title("Paragraph"))
+        .style(Style::new().white().on_black())
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: true}),
+        top_inner_layout[1]
+        );
         frame.render_widget(
             BarChart::new([
                 Bar::with_label("system cpu usage", self.system_cpu_usage as u64),
