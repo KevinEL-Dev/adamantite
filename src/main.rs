@@ -239,7 +239,7 @@ impl App {
             .split(layout[1]);
         let top_inner_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints(vec![Constraint::Percentage(75), Constraint(25)])
+            .constraints(vec![Constraint::Percentage(75), Constraint::Percentage(25)])
             .split(layout[0]);
         let list_widget = List::new(self.current_hytale_log_strings.clone())
             .block(Block::bordered().title("Logs"))
