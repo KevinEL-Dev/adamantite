@@ -145,6 +145,7 @@ mod tests {
 }
 #[derive(Debug, Default)]
 pub struct App {
+    total_system_cpu_usage: f32,
     system_cpu_usage: f32,
     hytale_cpu_usage: f32,
     system_mem_usage: f64,
@@ -174,7 +175,7 @@ impl App {
         self.curr_index = 0;
         self.data_points = Vec::new();
         let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(0);
-
+        self.total_system_cpu_usage = 0.0;
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()) {
                 sys.refresh_memory_specifics(sysinfo::MemoryRefreshKind::everything().with_ram());
@@ -214,18 +215,20 @@ impl App {
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
                 if last_emit_for_graph.elapsed() >= Duration::from_secs(1) {
                     self.update_data_points((time_in_seconds_counter as f64, current_system_cpu_usage.into()));
+                    self.update_total_system_cpu_usage(current_system_cpu_usage);
                     time_in_seconds_counter += 1;
                     last_emit_for_graph += Duration::from_secs(1);
                 }
             }
-            terminal.draw(|frame| self.draw(frame, &mut vertical, &mut state))?;
+            let avg_system_cpu_usage = self.get_avg_system_cpu_usage();
+            terminal.draw(|frame| self.draw(frame, &mut vertical, &mut state,avg_system_cpu_usage))?;
             if event::poll(Duration::from_millis(16))? {
                 self.handle_events(&mut state)?;
             }
         }
         Ok(())
     }
-    fn draw(&self, frame: &mut Frame, vertical: &mut ScrollbarState, state: &mut ListState) {
+    fn draw(&self, frame: &mut Frame, vertical: &mut ScrollbarState, state: &mut ListState, avg_system_cpu_usage: f32) {
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓"));
@@ -284,8 +287,8 @@ impl App {
             .y_axis(y_axis);
         let text = vec![
             Line::from(vec![
-                Span::raw("First"),
-                Span::styled("line",Style::new().green().italic()),
+                Span::raw("Average System CPU usage "),
+                Span::styled(avg_system_cpu_usage.to_string(),Style::new().green().italic()),
                 ".".into(),
             ]),
             Line::from("Second line".red()),
@@ -294,7 +297,6 @@ impl App {
         frame.render_widget(chart,top_inner_layout[0]);
         frame.render_widget(Paragraph::new(text)
         .block(Block::bordered().title("Paragraph"))
-        .style(Style::new().white().on_black())
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true}),
         top_inner_layout[1]
@@ -412,6 +414,16 @@ impl App {
     }
     fn update_data_points(&mut self, datapoints: (f64,f64)) {
         self.data_points.push(datapoints);
+    }
+    fn update_total_system_cpu_usage(&mut self,cpu_usage: f32) {
+        self.total_system_cpu_usage += cpu_usage;
+    }
+    fn get_avg_system_cpu_usage(&mut self) -> f32 {
+        let len_of_data_points = self.data_points.len();
+        if len_of_data_points > 1 {
+            return self.total_system_cpu_usage / self.data_points[len_of_data_points - 1].0 as f32
+        }
+        0.0
     }
 }
 impl Widget for &App {
