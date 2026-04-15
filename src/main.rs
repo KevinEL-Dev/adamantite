@@ -318,18 +318,17 @@ impl App {
                  Style::new().red().italic()
             };
         if color == Style::new().green().italic() {
-            info += "CPU ok";
+            info += "\nCPU ok";
         }else if color == Style::new().yellow().italic(){
-            info += "CPU usage elevated"
+            info += "\nCPU usage elevated"
         }else{
-            info += "CPU usage warning, expect performance drops in Hytale"
+            info += "\nCPU usage warning, expect performance drops in Hytale"
         }
         let text = vec![
             Line::from(vec![
                 Span::raw("Average System CPU usage "),
                 Span::styled(avg_system_cpu_usage.to_string(),color),
                 ".".into(),
-                "\n".into(),
                 Span::raw(info)
             ])
         ];
