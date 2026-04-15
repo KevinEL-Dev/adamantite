@@ -41,7 +41,6 @@ const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
 
 const OKCPUTHRESHOLD: f32 = 30.0;
 const WATCHCPUTHERSHOLD: f32 = 70.0;
-const WARNINGCPUTHRESHOLD: f32 = 100.0;
 
 #[derive(Debug)]
 enum CustomError {
@@ -326,7 +325,7 @@ impl App {
         ];
         frame.render_widget(chart,top_inner_layout[0]);
         frame.render_widget(Paragraph::new(text)
-        .block(Block::bordered().title("Paragraph"))
+        .block(Block::bordered())
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true}),
         top_inner_layout[1]
