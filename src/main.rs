@@ -308,6 +308,7 @@ impl App {
             .block(Block::bordered().title("Chart"))
             .x_axis(x_axis)
             .y_axis(y_axis);
+        let mut info = String::new();
         let color =
             if avg_system_cpu_usage < OKCPUTHRESHOLD {
                 Style::new().green().italic()
@@ -316,11 +317,19 @@ impl App {
             }else{
                  Style::new().red().italic()
             };
+        if color == Style::new().green().italic() {
+            info += "CPU ok";
+        }else if color == Style::new().yellow().italic(){
+            info += "CPU usage elevated"
+        }else{
+            info += "CPU usage warning, expect performance drops in Hytale"
+        }
         let text = vec![
             Line::from(vec![
                 Span::raw("Average System CPU usage "),
                 Span::styled(avg_system_cpu_usage.to_string(),color),
                 ".".into(),
+                Span::raw(info)
             ])
         ];
         frame.render_widget(chart,top_inner_layout[0]);
