@@ -329,6 +329,7 @@ impl App {
                 Span::raw("Average System CPU usage "),
                 Span::styled(avg_system_cpu_usage.to_string(),color),
                 ".".into(),
+                "\n".into(),
                 Span::raw(info)
             ])
         ];
