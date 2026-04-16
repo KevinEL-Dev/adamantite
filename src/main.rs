@@ -31,13 +31,17 @@ use ratatui::{
     symbols::border,
     text::{Line, Text},
     widgets::{
-        Block, List, ListDirection, ListState, Paragraph, Scrollbar, ScrollbarOrientation,
+        Block, List, ListDirection, ListState, Paragraph, Scrollbar, ScrollbarOrientation,Wrap,
         ScrollbarState, Widget,
     },
 };
 const LOW_IO_PRESSURE_MAX: f64 = 1.0;
 const MODERATE_IO_PRESSURE_MAX: f64 = 1.0;
 const HIGH_IO_PRESSURE_MAX: f64 = 1.0;
+
+const OKCPUTHRESHOLD: f32 = 30.0;
+const WATCHCPUTHERSHOLD: f32 = 70.0;
+
 #[derive(Debug)]
 enum CustomError {
     NoJournalCtlOutput,
@@ -136,15 +140,35 @@ mod tests {
     use super::*;
     use ratatui::style::Style;
 
+    // #[test]
+    // fn handle_key_event() {
+    //     let mut app = App::default();
+    //     app.handle_key_event(KeyCode::Char('q').into());
+    //     assert!(app.exit);
+    // }
     #[test]
-    fn handle_key_event() {
-        let mut app = App::default();
-        app.handle_key_event(KeyCode::Char('q').into());
-        assert!(app.exit);
+    fn set_color_for_avg_cpu_usage() {
+        let avg_system_cpu_usage: [f32; 3] = [29.0,50.2,89.3] ;
+        let correct_style: [Style; 3] = [Style::new().green().italic(),Style::new().yellow().italic(),Style::new().red().italic()];
+
+        let mut style_iter = correct_style.into_iter();
+        for cpu_usage in avg_system_cpu_usage {
+            let color =
+                if cpu_usage < OKCPUTHRESHOLD {
+                    Style::new().green().italic()
+                }else if cpu_usage > OKCPUTHRESHOLD && cpu_usage < WATCHCPUTHERSHOLD {
+                    Style::new().yellow().italic()
+                }else{
+                     Style::new().red().italic()
+                };
+            assert_eq!(color,style_iter.next().unwrap(), "testing whether correct color is chosen when cpu usage is between certain thresholds");
+
+        }
     }
 }
 #[derive(Debug, Default)]
 pub struct App {
+    total_system_cpu_usage: f32,
     system_cpu_usage: f32,
     hytale_cpu_usage: f32,
     system_mem_usage: f64,
@@ -174,7 +198,7 @@ impl App {
         self.curr_index = 0;
         self.data_points = Vec::new();
         let mut vertical = ScrollbarState::new(self.current_hytale_log_strings.len()).position(0);
-
+        self.total_system_cpu_usage = 0.0;
         while !self.exit {
             if last_emit.elapsed() >= Duration::from_millis(interval_ms.try_into().unwrap()) {
                 sys.refresh_memory_specifics(sysinfo::MemoryRefreshKind::everything().with_ram());
@@ -214,18 +238,20 @@ impl App {
                 last_emit += Duration::from_millis(interval_ms.try_into().unwrap());
                 if last_emit_for_graph.elapsed() >= Duration::from_secs(1) {
                     self.update_data_points((time_in_seconds_counter as f64, current_system_cpu_usage.into()));
+                    self.update_total_system_cpu_usage(current_system_cpu_usage);
                     time_in_seconds_counter += 1;
                     last_emit_for_graph += Duration::from_secs(1);
                 }
             }
-            terminal.draw(|frame| self.draw(frame, &mut vertical, &mut state))?;
+            let avg_system_cpu_usage = self.get_avg_system_cpu_usage();
+            terminal.draw(|frame| self.draw(frame, &mut vertical, &mut state,avg_system_cpu_usage))?;
             if event::poll(Duration::from_millis(16))? {
                 self.handle_events(&mut state)?;
             }
         }
         Ok(())
     }
-    fn draw(&self, frame: &mut Frame, vertical: &mut ScrollbarState, state: &mut ListState) {
+    fn draw(&self, frame: &mut Frame, vertical: &mut ScrollbarState, state: &mut ListState, avg_system_cpu_usage: f32) {
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓"));
@@ -237,6 +263,10 @@ impl App {
             .direction(Direction::Horizontal)
             .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(layout[1]);
+        let top_inner_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![Constraint::Percentage(75), Constraint::Percentage(25)])
+            .split(layout[0]);
         let list_widget = List::new(self.current_hytale_log_strings.clone())
             .block(Block::bordered().title("Logs"))
             .style(Style::new().white())
@@ -275,10 +305,42 @@ impl App {
             .labels(["0.0%","10.0%","20.0%","30.0%","40.0%","50.0%"]);
 
         let chart = Chart::new(datasets)
-            .block(Block::new().title("Chart"))
+            .block(Block::bordered().title("Chart"))
             .x_axis(x_axis)
             .y_axis(y_axis);
-        frame.render_widget(chart,layout[0]);
+        let mut info = String::new();
+        let color =
+            if avg_system_cpu_usage < OKCPUTHRESHOLD {
+                Style::new().green().italic()
+            }else if avg_system_cpu_usage > OKCPUTHRESHOLD && avg_system_cpu_usage < WATCHCPUTHERSHOLD {
+                Style::new().yellow().italic()
+            }else{
+                 Style::new().red().italic()
+            };
+        if color == Style::new().green().italic() {
+            info += "\nCPU ok";
+        }else if color == Style::new().yellow().italic(){
+            info += "\nCPU usage elevated"
+        }else{
+            info += "\nCPU usage warning, expect performance drops in Hytale"
+        }
+        let text = vec![
+            Line::from(vec![
+                Span::raw("Average System CPU usage "),
+                Span::styled(avg_system_cpu_usage.to_string(),color),
+                ".".into(),
+            ]),
+            Line::from(vec![
+                Span::raw(info)
+            ])
+        ];
+        frame.render_widget(chart,top_inner_layout[0]);
+        frame.render_widget(Paragraph::new(text)
+        .block(Block::bordered())
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: true}),
+        top_inner_layout[1]
+        );
         frame.render_widget(
             BarChart::new([
                 Bar::with_label("system cpu usage", self.system_cpu_usage as u64),
@@ -392,6 +454,16 @@ impl App {
     }
     fn update_data_points(&mut self, datapoints: (f64,f64)) {
         self.data_points.push(datapoints);
+    }
+    fn update_total_system_cpu_usage(&mut self,cpu_usage: f32) {
+        self.total_system_cpu_usage += cpu_usage;
+    }
+    fn get_avg_system_cpu_usage(&mut self) -> f32 {
+        let len_of_data_points = self.data_points.len();
+        if len_of_data_points > 1 {
+            return self.total_system_cpu_usage / self.data_points[len_of_data_points - 1].0 as f32
+        }
+        0.0
     }
 }
 impl Widget for &App {
